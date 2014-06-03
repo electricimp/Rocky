@@ -1,4 +1,4 @@
-ass Rocky {
+class Rocky {
     _handlers = null;
     
     // Settings:
