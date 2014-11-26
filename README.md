@@ -22,13 +22,15 @@ The following settings can be passed into Rocky to alter how it behaves:
 - ```timeout``` - Modifies how long Rocky will hold onto a request before automatically executing the onTimeout handler
 - ```allowUnsecure``` - Modifies whether or not Rocky will accept HTTP requests (as opposed to HTTPS)
 - ```strictRouting``` - Enables or disables strict routing - by default Rocky will consider "/foo" and "/foo/" 	as identical paths
+- ```accessControl``` - Modifies whether or not Rocky will automatically add Access-Control headers to the response object. 
 
 The default settings are listed below:
 
 	{ 
 		timeout = 10,
 		allowUnsecure = false,
-		strictRouting = false
+		strictRouting = false,
+		accessControl = true
 	}
 	
 ## app.VERB(path, callback)

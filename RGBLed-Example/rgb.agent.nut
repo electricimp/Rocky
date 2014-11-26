@@ -1,3 +1,4 @@
+/******************** Library Classes ********************/
 class Rocky {
     _handlers = null;
     
@@ -5,11 +6,13 @@ class Rocky {
     _timeout = 10;
     _strictRouting = false;
     _allowUnsecure = false;
+    _accessControl = true;
     
     constructor(settings = {}) {
         if ("timeout" in settings) _timeout = settings.timeout;
         if ("allowUnsecure" in settings) _allowUnsecure = settings.allowUnsecure;
         if ("strictRouting" in settings) _strictRouting = settings.strictRouting;
+        if ("accessControl" in settings) _accessConrol = settings.accessControl;
 
         _handlers = { 
             authorize = _defaultAuthorizeHandler.bindenv(this),
@@ -73,16 +76,19 @@ class Rocky {
         return this;
     }
 
-    // This should come from the context bind not the class
-    function access_control() {
-        // We should probably put this as a default OPTION handler, but for now this will do
-        // It is probably never required tho as this is an API handler not a HTML handler
+    // Adds access control headers
+    function _addAccessControl(res) {
         res.header("Access-Control-Allow-Origin", "*")
         res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        res.header("Access-Control-Allow-Methods", "POST, PUT, GET, OPTIONS");
     }
     
     /************************** [ PRIVATE FUNCTIONS ] *************************/
     function _onrequest(req, res) {
+        
+        // Add access control headers if required
+        if (_accessControl) _addAccessControl(res);
+        
         // Setup the context for the callbacks
         local context = Rocky.Context(req, res);
         
@@ -447,7 +453,6 @@ class Rocky.Context {
         }.bindenv(this))
     }
 }
-
 
 /******************** Application Code ********************/
 led <- {
