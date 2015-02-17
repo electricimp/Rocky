@@ -1,3 +1,7 @@
+// Copyright (c) 2015 Electric Imp
+// This file is licensed under the MIT License
+// http://opensource.org/licenses/MIT
+
 redPin <- hardware.pin1;
 greenPin <- hardware.pin2;
 bluePin <- hardware.pin5;
@@ -13,7 +17,7 @@ blue <- 0;  // 0 - 255
 state <- 0; // 0 = off, 1 = on
 
 function sendInfo(nullData = null) {
-    agent.send("info", { 
+    agent.send("info", {
         color = [red, green, blue],
         state = state
     });
@@ -25,8 +29,8 @@ function setColor(colors) {
         if (color > 255) colors[i] = 255;
     }
 
-    red = color[0]; 
-    green = color[1]; 
+    red = color[0];
+    green = color[1];
     blue = color[2];
 
     update();
@@ -40,7 +44,7 @@ function setState(s) {
 }
 
 function update() {
-    if (state == 0) { 
+    if (state == 0) {
         redPin.write(0);
         greenPin.write(0);
         bluePin.write(0);

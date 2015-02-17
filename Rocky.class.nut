@@ -1,4 +1,9 @@
+// Copyright (c) 2015 Electric Imp
+// This file is licensed under the MIT License
+// http://opensource.org/licenses/MIT
+
 class Rocky {
+
     _handlers = null;
 
     // Settings:
