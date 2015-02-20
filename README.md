@@ -6,7 +6,7 @@ Rocky is a [Squirrel](http://squirrel-lang.org) framework aimed at simplifying t
 ## Rocky()
 Create a Rocky application:
 
-```
+```squirrel
 app <- Rocky();
 
 app.get("/", function(context) {
@@ -26,7 +26,7 @@ The following settings can be passed into Rocky to alter how it behaves:
 
 The default settings are listed below:
 
-```
+```squirrel
 {
 	timeout = 10,
 	allowUnsecure = false,
@@ -41,7 +41,7 @@ The ```app.VERB``` methods provide the basic routing functionality in Rocky. The
 
 The following snippet illustrates the simplest route handler possible.
 
-```
+```squirrel
 app.get("/", function(context) {
 	context.send("Hello World");
 });
@@ -49,7 +49,7 @@ app.get("/", function(context) {
 
 Regular expressions may also be used in the path. If you wanted to respond to both /color and /colour you could create the following handler:
 
-```
+```squirrel
 app.get("/colo[u]?r", function(context) {
 	context.send(200, { color = led.color });
 });
