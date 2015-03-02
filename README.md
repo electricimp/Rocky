@@ -12,10 +12,6 @@ Instantiate a Rocky application:
 
 ```squirrel
 app <- Rocky()
-
-app.get("/", function(context) {
-	context.send("Hello World!")
-})
 ```
 
 ### Class Properties
