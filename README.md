@@ -72,11 +72,11 @@ The method returns `false` if the context has already been used to respond to th
 
 ```
 app.get("/color", function(context) {
-context.send(200, { color = led.color })
+    context.send(200, { color = led.color })
 })
 
 app.get("/state", function(context) {
-context.send({ state = led.state })
+    context.send({ state = led.state })
 })
 ```
 
