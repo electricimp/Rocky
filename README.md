@@ -40,7 +40,7 @@ The default settings are listed below:
 
 ## VERB(*path*, *callback*)
 
-The ```VERB``` methods provide the basic routing functionality in Rocky. The following verbs are available: GET, PUT and POST.
+The ```VERB``` methods provide the basic routing functionality in Rocky. The following verbs are available: GET, PUT and POST, as *get()*, *put()* and *post()*, respectively.
 
 The following snippet illustrates the simplest route handler possible.
 
