@@ -16,9 +16,7 @@ app.get("/", function(context) {
 })
 ```
 
-## Application
-
-### Settings
+### Class Properties
 
 The following settings can be passed into Rocky to alter how it behaves:
 
