@@ -70,6 +70,16 @@ The *send()* method returns a response to a request made to a Rocky application.
 
 The method returns `false` if the context has already been used to respond to the request.
 
+```
+app.get("/color", function(context) {
+context.send(200, { color = led.color })
+})
+
+app.get("/state", function(context) {
+context.send({ state = led.state })
+})
+```
+
 ### setHeader(*key*, *value*)
 
 Adds a header to the internally managed response that will at some point be returned to the requester.
