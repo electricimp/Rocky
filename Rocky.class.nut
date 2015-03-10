@@ -16,7 +16,7 @@ class Rocky {
         if ("timeout" in settings) _timeout = settings.timeout;
         if ("allowUnsecure" in settings) _allowUnsecure = settings.allowUnsecure;
         if ("strictRouting" in settings) _strictRouting = settings.strictRouting;
-        if ("accessControl" in settings) _accessConrol = settings.accessControl;
+        if ("accessControl" in settings) _accessControl = settings.accessControl;
 
         _handlers = {
             authorize = _defaultAuthorizeHandler.bindenv(this),
