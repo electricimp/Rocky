@@ -424,7 +424,7 @@ class Rocky.Context {
         return res.header(key, value);
     }
 
-    function send(code, message = null) {
+    function send(code, message = null, forcejson = false) {
         // Cancel the timeout
         if (timer) {
             imp.cancelwakeup(timer);
@@ -441,7 +441,11 @@ class Rocky.Context {
             return false;
         }
 
-        if (message == null && typeof code == "integer") {
+        if (forcejson) {
+			// Encode whatever it is as a json object
+			res.header("Content-Type", "application/json; charset=utf-8");
+			res.send(code, http.jsonencode(message));
+		} else if (message == null && typeof code == "integer") {
             // Empty result code
             res.send(code, "");
         } else if (message == null && typeof code == "string") {
