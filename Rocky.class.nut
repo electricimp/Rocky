@@ -80,8 +80,8 @@ class Rocky {
         return this;
     }
 
-	function broadcast(statuscode, response) {
-		Rocky.Context.broadcast(statuscode, response);
+	function broadcast(statuscode, response, headers = {}) {
+		Rocky.Context.broadcast(statuscode, response, headers);
 	}
 
     /************************** [ PRIVATE FUNCTIONS ] *************************/
@@ -479,9 +479,12 @@ class Rocky.Context {
     }
 
 
-	function broadcast(statuscode, response) {
+	function broadcast(statuscode, response, headers = {}) {
 		// Send to all active contexts
 		foreach (context in _contexts) {
+            foreach (key, value in headers) {
+				context.setHeader(key, value);
+			}
 			context.send(statuscode, response);
 		}
 	}
