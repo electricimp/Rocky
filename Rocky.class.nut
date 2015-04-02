@@ -125,12 +125,12 @@ class Rocky {
             local onTimeout = _handlers.onTimeout;
             local timeout = _timeout;
 
-            if (route.handler.hasTimeout()) {
-                onTimeout = route.handler.onTimeout;
-                timeout = route.handler.timeout;
+            if (route.handler.hasHandler("onTimeout")) {
+                onTimeout = route.handler.getHandler("onTimeout");
+                timeout = route.handler.getTimeout();
             }
 
-            context.setTimeout(_timeout, onTimeout);
+            context.setTimeout(timeout, onTimeout);
             route.handler.execute(context, _handlers);
         } else {
             // if we don't have a handler
@@ -302,15 +302,13 @@ class Rocky {
 }
 
 class Rocky.Route {
-    handlers = null;
-    timeout = null;
-
+    _handlers = null;
+    _timeout = null;
     _callback = null;
 
     constructor(callback) {
-        handlers = {};
-        timeout = 10;
-
+        _handlers = {};
+        _timeout = 10;
         _callback = callback;
     }
 
@@ -318,45 +316,59 @@ class Rocky.Route {
     function execute(context, defaultHandlers) {
         try {
             // setup handlers
+            // NOTE: Copying these handlers into the route might have some unintended side effect.
+            //       Consider changing this if issues come up.
             foreach (handlerName, handler in defaultHandlers) {
-                if (!(handlerName in handlers)) handlers[handlerName] <- handler;
+                if (!(handlerName in _handlers)) _handlers[handlerName] <- handler;
             }
 
-            if(handlers.authorize(context)) {
+            if (_handlers.authorize(context)) {
                 _callback(context);
-            }
-            else {
-                handlers.onUnauthorized(context);
+            } else {
+                _handlers.onUnauthorized(context);
             }
         } catch(ex) {
-            handlers.onException(context, ex);
+            _handlers.onException(context, ex);
         }
     }
 
     function authorize(callback) {
-        handlers.authorize <- callback;
+        _handlers.authorize <- callback;
         return this;
     }
 
     function onException(callback) {
-        handlers.onException <- callback;
+        _handlers.onException <- callback;
         return this;
     }
 
     function onUnauthorized(callback) {
-        handlers.onUnauthorized <- callback;
+        _handlers.onUnauthorized <- callback;
         return this;
     }
 
     function onTimeout(callback, t = 10) {
-        handlers.onTimeout <- callback;
-        timeout = t;
+        _handlers.onTimeout <- callback;
+        _timeout = t;
         return this;
     }
 
-    function hasTimeout() {
-        return ("onTimeout" in handlers);
+    function hasHandler(handlerName) {
+        return (handlerName in _handlers);
     }
+
+    function getHandler(handlerName) {
+        return _handlers[handlerName];
+    }
+    
+    function getTimeout() {
+        return _timeout;
+    }
+
+    function setTimeout(timeout) {
+        return _timeout = timeout;
+    }
+
 }
 
 class Rocky.Context {
