@@ -80,6 +80,11 @@ class Rocky {
         return this;
     }
 
+	function broadcast(statuscode, response) {
+		Rocky.Context.broadcast(statuscode, response);
+	}
+
+    /************************** [ PRIVATE FUNCTIONS ] *************************/
     // Adds access control headers
     function _addAccessControl(res) {
         res.header("Access-Control-Allow-Origin", "*")
@@ -87,7 +92,6 @@ class Rocky {
         res.header("Access-Control-Allow-Methods", "POST, PUT, GET, OPTIONS");
     }
 
-    /************************** [ PRIVATE FUNCTIONS ] *************************/
     function _onrequest(req, res) {
 
         // Add access control headers if required
@@ -468,4 +472,13 @@ class Rocky.Context {
             }
         }.bindenv(this))
     }
+
+
+	function broadcast(statuscode, response) {
+		// Send to all active contexts
+		foreach (context in _contexts) {
+			context.send(statuscode, response);
+		}
+	}
+
 }
