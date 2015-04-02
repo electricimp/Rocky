@@ -385,6 +385,7 @@ class Rocky.Context {
     path = null;
     matches = null;
     timer = null;
+	userdata = null;
     static _contexts = {};
 
     constructor(_req, _res) {
