@@ -80,9 +80,9 @@ class Rocky {
         return this;
     }
 
-	function broadcast(statuscode, response, headers = {}) {
-		Rocky.Context.broadcast(statuscode, response, headers);
-	}
+    function sendToAll(statuscode, response, headers = {}) {
+        Rocky.Context._sendToAll(statuscode, response, headers);
+    }
 
     /************************** [ PRIVATE FUNCTIONS ] *************************/
     // Adds access control headers
@@ -385,7 +385,7 @@ class Rocky.Context {
     path = null;
     matches = null;
     timer = null;
-	userdata = null;
+    userdata = null;
     static _contexts = {};
 
     constructor(_req, _res) {
@@ -442,10 +442,10 @@ class Rocky.Context {
         }
 
         if (forcejson) {
-			// Encode whatever it is as a json object
-			res.header("Content-Type", "application/json; charset=utf-8");
-			res.send(code, http.jsonencode(message));
-		} else if (message == null && typeof code == "integer") {
+            // Encode whatever it is as a json object
+            res.header("Content-Type", "application/json; charset=utf-8");
+            res.send(code, http.jsonencode(message));
+        } else if (message == null && typeof code == "integer") {
             // Empty result code
             res.send(code, "");
         } else if (message == null && typeof code == "string") {
@@ -479,14 +479,16 @@ class Rocky.Context {
     }
 
 
-	function broadcast(statuscode, response, headers = {}) {
-		// Send to all active contexts
-		foreach (context in _contexts) {
+    /************************** [ PRIVATE FUNCTIONS ] *************************/
+
+    function _sendToAll(statuscode, response, headers = {}) {
+        // Send to all active contexts
+        foreach (context in _contexts) {
             foreach (key, value in headers) {
-				context.setHeader(key, value);
-			}
-			context.send(statuscode, response);
-		}
-	}
+                context.setHeader(key, value);
+            }
+            context.send(statuscode, response);
+        }
+    }
 
 }
