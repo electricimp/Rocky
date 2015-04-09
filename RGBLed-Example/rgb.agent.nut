@@ -31,7 +31,9 @@ app.post("/color", function(context) {
         if (!("blue" in context.req.body.color)) throw "Missing param: color.blue";
 
         // if preflight check passed - do things
-        setColor(context.req.body.color);
+        device.send("setColor", context.req.body.color);
+
+        // send the response
         context.send({ verb = "POST", color = led.color });
     } catch (ex) {
         context.send(400, ex);
@@ -48,7 +50,8 @@ app.post("/state", function(context) {
     }
 
     // if preflight check passed - do things
-    setState(context.req.body.state);
+    device.send("setState", context.req.body.state);
+
+    // send the response
     context.send({ verb = "POST", state = led.state });
 });
-

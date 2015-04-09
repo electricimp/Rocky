@@ -60,4 +60,3 @@ agent.on("state", setState);
 agent.on("getInfo", sendInfo);
 
 sendInfo();
-
