@@ -7,7 +7,7 @@ Rocky is an framework for building powerful and scalable APIs for your Electric 
   - [Rocky.put](#rocky_verb) - Creates a handler for PUT requests that match the specified signature.
   - [Rocky.post](#rocky_verb) - Creates a handler for POST requests that match the specified signature.
   - [Rocky.on](#rocky_on) - Creates a handler for requests that match the specified verb and signature.
-  - [Rocky.getContext](#rocky_getContext) - Retreives a [Rocky.Context](#context) object by it's ID (primairly used for asyncronous requests).
+  - [Rocky.getContext](#rocky_getcontext) - Retreives a [Rocky.Context](#context) object by it's ID (primairly used for asyncronous requests).
   - [Rocky.sendToAll](#rocky_sendtoall) - Closes *all* open requests with the specified code, body, and headers.
   - [Rocky.authorize](#rocky_authorize) - Specify the default ```authorize``` handler for all routes.
   - [Rocky.onUnauthorized](#rocky_onunauthorized) - Specify the default ```onUnauthorized``` callback for all routes.
@@ -18,7 +18,6 @@ Rocky is an framework for building powerful and scalable APIs for your Electric 
   - [Rocky.Route.authorize](#route_authorize) - Specify the default ```authorize``` handler for all routes.
   - [Rocky.Route.onUnauthorized](#route_onunauthorized) - Specify the default ```onUnauthorized``` callback for all routes.
   - [Rocky.Route.onTimeout](#route_ontimeout) - Set the default ```onTimeout``` handler for all routes.
-  - [Rocky.Route.onNotFound](#route_onnotfound) - Set the default ```onNotFound``` handler for all routes.
   - [Rocky.Route.onException](#route_onexception) - Set the default ```onException``` handler for all routes.
 - [Rocky.Context](#context) - The information passed into a route handler.
   - [Rocky.Context.send](#context_send) - Sends an HTTP response.
@@ -27,7 +26,7 @@ Rocky is an framework for building powerful and scalable APIs for your Electric 
   - [Rocky.Context.req](#context_req) - The HTTP Request Table.
   - [Rocky.Context.id](#context_id) - Context's unique ID.
   - [Rocky.Context.sent](#context_sent) - Flag to indicate if the request has been responded to yet.
-  - [Rocky.Context.userdata](userdata) - Field developers can use to store data during long running tasks, etc
+  - [Rocky.Context.userdata](#context_userdata) - Field developers can use to store data during long running tasks, etc
   - [Rocky.Context.path](#context_path) - The full path the request was made to.
   - [Rocky.Context.matches](#context_matches) - An array of matches to the path's regular expression.
   - [Rocky.Context.isBrowser](#context_isbrowser) - Returns true if the request contains an ```Accept: text/html``` header.
@@ -184,7 +183,7 @@ app.authorize(function(context) {
 });
 ```
 
-<div id="rocky_onauthorized"><h3>app.onUauthorized(callback)</h3></div>
+<div id="rocky_onunauthorized"><h3>app.onUauthorized(callback)</h3></div>
 
 The *onUnauthorized* method allows you to configure the default response to requests that fail the *authorize* method. The callback method takes a [Rocky.Context](#context) object as a parameter. The callback method passed into *onUnauthorized* will be executed for all unauthorized requests that do not have a route level [onUnauthorized](route_onUnauthorized) response handler.
 
@@ -240,7 +239,7 @@ app.get("/", function(context) {
 });
 ```
 
-<div id="route_authorize"><h3>app.authorize(callback)</h3></div>
+<div id="route_authorize"><h3>route.authorize(callback)</h3></div>
 
 The *authorize* method allows you to specify a route level function to validate or authorize incoming requests. A route level authorize handler will override the global authorize handler set by [Rocky.authorize](#rocky_authorize) for requests made to the specified route. The callback function takes a [Rocky.Context](#context) object as a parameter, and must return either true (if the request is authorized) or false (if the request is not authorized).
 
@@ -261,7 +260,7 @@ app.on("delete", "/users/([^/]*)", function(context) {
 });
 ```
 
-<div id="route_onauthorized"><h3>app.onUauthorized(callback)</h3></div>
+<div id="route_onunauthorized"><h3>route.onUauthorized(callback)</h3></div>
 
 The *onUnauthorized* method allows you to configure a route level response to requests that fail the *authorize* method. A route level onUnauthorized handler will override the global onUnauthorized handler set by [Rocky.onUnauthorized](#rocky_onunauthorized) for requests made to the specified route. The callback method takes a [Rocky.Context](#context) object as a parameter. The callback method passed into *onUnauthorized* will be executed for all unauthorized requests that do not have a route level [onUnauthorized](route_onUnauthorized) response handler.
 
@@ -280,7 +279,7 @@ app.on("delete", "/users/([^/]*)", function(context) {
 });
 ```
 
-<div id="route_ontimeout"><h3>app.onTimeout(callback)</h3></div>
+<div id="route_ontimeout"><h3>route.onTimeout(callback)</h3></div>
 
 The *onTimeout* method allows you to configure a route level response to requests that exceed the timeout. A route level onTimeout handler will override the global onTimeout handler set by [Rocky.onTimeout](#rocky_ontimeout) for requests made to the specified route. The callback method passed into *onTimeout* will be executed for all timed out requests that do not have a route level [onTimeout](route_onTimeout) response handler. The callback method takes a [Rocky.Context](#context) object as a parameter. This method should (but is not required to) send a response code of 408.
 
@@ -299,7 +298,7 @@ device.on("getTempResponse", function(data) {
 });
 ```
 
-<div id="route_onexception"><h3>app.onException(callback)</h3></div>
+<div id="route_onexception"><h3>route.onException(callback)</h3></div>
 
 The *onException* method allows you to configure a route level response handler for requests that encounter runtime errors. A route level onException handler will override the global onException handler set by [Rocky.onTimeout](#rocky_onexception) for requests made to the specified route. The callback method takes two parameters, a [Rocky.Context](#context) object, and the exception. The callback method will be excuted for all requests that encounter runtime errors and do not have a route level [onException](route_onexception) handler. This method should (but is not required to) send a response code of 500.
 
