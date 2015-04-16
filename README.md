@@ -36,7 +36,7 @@ Rocky is an framework for building powerful and scalable APIs for your Electric 
 Calling the Rocky constructor creates a new Rocky application. An optional *options* table can be passed into the constructor to override default behaviours:
 
 ```squirrel
-#require "rocky.class.nut:1.1.0"
+#require "rocky.class.nut:1.1.1"
 
 app <- Rocky()
 ```
