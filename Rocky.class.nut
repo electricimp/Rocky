@@ -90,6 +90,10 @@ class Rocky {
         Rocky.Context._sendToAll(statuscode, response, headers);
     }
 
+    function getContext(id) {
+        return Rocky.Context.get(id);
+    }
+
     /************************** [ PRIVATE FUNCTIONS ] *************************/
     // Adds access control headers
     function _addAccessControl(res) {
