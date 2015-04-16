@@ -4,6 +4,8 @@
 
 class Rocky {
 
+    static version = [1,1,1]
+
     _handlers = null;
 
     // Settings:
@@ -37,6 +39,8 @@ class Rocky {
         if (!(signature in _handlers)) _handlers[signature] <- {};
 
         local routeHandler = Rocky.Route(callback);
+        routeHandler.setTimeout(_timeout);
+
         _handlers[signature][verb] <- routeHandler;
 
         return routeHandler;
@@ -64,9 +68,11 @@ class Rocky {
         return this;
     }
 
-    function onTimeout(callback, timeout = 10) {
+    function onTimeout(callback, t = null) {
+        if (t == null) t = _timeout;
+
         _handlers.onTimeout <- callback;
-        _timeout = timeout;
+        _timeout = t;
         return this;
     }
 
@@ -351,7 +357,9 @@ class Rocky.Route {
         return this;
     }
 
-    function onTimeout(callback, t = 10) {
+    function onTimeout(callback, t = null) {
+        if (t == null) t = _timeout;
+
         _handlers.onTimeout <- callback;
         _timeout = t;
         return this;
@@ -364,7 +372,7 @@ class Rocky.Route {
     function getHandler(handlerName) {
         return _handlers[handlerName];
     }
-    
+
     function getTimeout() {
         return _timeout;
     }
