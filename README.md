@@ -31,6 +31,8 @@ Rocky is an framework for building powerful and scalable APIs for your Electric 
   - [Rocky.Context.matches](#context_matches) - An array of matches to the path's regular expression.
   - [Rocky.Context.isBrowser](#context_isbrowser) - Returns true if the request contains an ```Accept: text/html``` header.
 
+**To add this library to your project, add** `#require "Rocky.class.nut:1.1.1"` **to the top of your agent code**
+
 <div id="rocky"><h2>Rocky(*[options]*)</h2></div>
 
 Calling the Rocky constructor creates a new Rocky application. An optional *options* table can be passed into the constructor to override default behaviours:
