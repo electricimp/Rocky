@@ -6,6 +6,8 @@ class Rocky {
 
     static version = [1,1,1]
 
+    static PARSE_ERROR = "Error parsing body of request";
+
     _handlers = null;
 
     // Settings:
@@ -35,6 +37,7 @@ class Rocky {
     function on(verb, signature, callback) {
         // Register this signature and verb against the callback
         verb = verb.toupper();
+
         signature = signature.tolower();
         if (!(signature in _handlers)) _handlers[signature] <- {};
 
@@ -119,9 +122,8 @@ class Rocky {
         // Parse the request body back into the body
         try {
             req.body = _parse_body(req);
-        } catch (e) {
-            server.log("Parse error '" + e + "' when parsing:\r\n" + req.body)
-            context.send(400, e);
+        } catch (err) {
+            context.send(400, Rocky.PARSE_ERROR);
             return;
         }
 
@@ -153,19 +155,30 @@ class Rocky {
     }
 
     function _parse_body(req) {
-        if ("content-type" in req.headers && req.headers["content-type"] == "application/json") {
+        local contentType = "content-type" in req.headers ? req.headers["content-type"] : "";
+
+        if (contentType == "application/json") {
             if (req.body == "" || req.body == null) return null;
             return http.jsondecode(req.body);
         }
-        if ("content-type" in req.headers && req.headers["content-type"] == "application/x-www-form-urlencoded") {
+
+        if (contentType == "application/x-www-form-urlencoded") {
+            if (req.body == "" || req.body == null) return null;
             return http.urldecode(req.body);
         }
-        if ("content-type" in req.headers && req.headers["content-type"].slice(0,20) == "multipart/form-data;") {
+
+        // .find instead of slice to ensure this doesn't fail..
+        if (contentType.find("multipart/form-data;") == 0) {
             local parts = [];
-            local boundary = req.headers["content-type"].slice(30);
+
+            // _parse_body is wrapped in a try/catch.. so we just let this fail
+            // when the content-type isn't long enough (and on other issues).
+            local boundary = contentType.slice(30);
+
             local bindex = -1;
             do {
                 bindex = req.body.find("--" + boundary + "\r\n", bindex+1);
+
                 if (bindex != null) {
                     // Locate all the parts
                     local hstart = bindex + boundary.len() + 4;
@@ -333,7 +346,7 @@ class Rocky.Route {
             // NOTE: Copying these handlers into the route might have some unintended side effect.
             //       Consider changing this if issues come up.
             foreach (handlerName, handler in defaultHandlers) {
-                if (!(handlerName in _handlers)) _handlers[handlerName] <- handler;
+                if (!hasHandler(handlerName)) { setHandler(handlerName, handler); }
             }
 
             if (_handlers.authorize(context)) {
@@ -347,25 +360,31 @@ class Rocky.Route {
     }
 
     function authorize(callback) {
-        _handlers.authorize <- callback;
-        return this;
+        return setHandler("authorize", callback);
     }
 
     function onException(callback) {
-        _handlers.onException <- callback;
-        return this;
+        return setHandler("onException", callback);
     }
 
     function onUnauthorized(callback) {
-        _handlers.onUnauthorized <- callback;
-        return this;
+        return setHandler("onUnauthorized", callback);
     }
 
     function onTimeout(callback, t = null) {
         if (t == null) t = _timeout;
-
-        _handlers.onTimeout <- callback;
         _timeout = t;
+
+        return setHandler("onTimeout", callback);
+    }
+
+    function setHandler(handlerName, callback) {
+        // Create handler slot if required
+        if (!hasHandler(handlerName)) { _handlers[handlerName] <- null; }
+
+        // Set the handler
+        _handlers[handlerName] = callback;
+
         return this;
     }
 
@@ -374,6 +393,10 @@ class Rocky.Route {
     }
 
     function getHandler(handlerName) {
+        // Return null if no handler
+        if (!hasHandler(handlerName)) { return null; }
+
+        // Return the handler if it exists
         return _handlers[handlerName];
     }
 
@@ -390,7 +413,7 @@ class Rocky.Route {
 class Rocky.Context {
     req = null;
     res = null;
-    sent = false;
+    sent = null;
     id = null;
     time = null;
     auth = null;

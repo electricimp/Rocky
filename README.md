@@ -31,9 +31,7 @@ Rocky is an framework for building powerful and scalable APIs for your Electric 
   - [Rocky.Context.matches](#context_matches) - An array of matches to the path's regular expression.
   - [Rocky.Context.isBrowser](#context_isbrowser) - Returns true if the request contains an ```Accept: text/html``` header.
 
-**To add this library to your project, add** `#require "Rocky.class.nut:1.1.1"` **to the top of your agent code**
-
-<div id="rocky"><h2>Rocky(*[options]*)</h2></div>
+<div id="rocky"><h2>Rocky([options])</h2></div>
 
 Calling the Rocky constructor creates a new Rocky application. An optional *options* table can be passed into the constructor to override default behaviours:
 
@@ -63,7 +61,7 @@ defaults <- {
 }
 ```
 
-<div id="rocky_verb"><h3>app.**VERB**(*signature, callback*)</h3></div>
+<div id="rocky_verb"><h3>app.VERB(signature, callback)</h3></div>
 The **VERB** methods allow you to assign routes based on the specified verb and signature. The following **VERB**s are allowed:
 
 - app.get(*signature, callback*)
@@ -101,7 +99,7 @@ app.get("/users/([^/]*)", function(context) {
 });
 ```
 
-<div id="rocky_on"><h3>app.on(*verb, signature, callback*)</h3></div>
+<div id="rocky_on"><h3>app.on(verb, signature, callback)</h3></div>
 
 The *on* method allows you to create APIs that use verbs other than GET, PUT, and POST. The *.on* method works identically to the **.VERB** methods, but we specify the verb as a string:
 
@@ -155,7 +153,7 @@ agent.on("getTemp", function(id) {
 });
 ```
 
-<div id="rocky_sendtoall"><h3>app.sendToAll(*statuscode, response, [headers]*)</h3></div>
+<div id="rocky_sendtoall"><h3>app.sendToAll(statuscode, response, [headers])</h3></div>
 
 The *sendToAll* method sends a response to **all** open requests. This is most useful in APIs that allow for long-polling.
 
@@ -317,7 +315,7 @@ app.get("/", function(context) {
 
 The Rocky.Context object encapsulates an [HTTP Request Table](http://electricimp.com/docs/api/httphandler/) an [HTTPResponse](http://electricimp.com/docs/api/httpresponse/) object, and other important information. When a request is made, Rocky will automatically generate a new context object for that request and pass it to the required callbacks (i.e. - you should never manuall create a Rocky.Context object).
 
-<div id="context_send"><h3>context.send(*statuscode, [message]*)</h3></div>
+<div id="context_send"><h3>context.send(statuscode, [message] )</h3></div>
 
 
 The *send* method returns a response to a request made to a Rocky application. It takes two parameters. The first is an integer [HTTP status code](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes). The second parameter, which is optional, is the data that will be relayed back to the requester, either a string, an array of values, or a table.
@@ -332,7 +330,7 @@ app.get("/color", function(context) {
 })
 ```
 
-<h3>context.send(*message*)</h3>
+<h3>context.send(message)</h3>
 
 The *send* method may also be invoked without a status code - when invoked in this fashion, a status code of 200 is assumed:
 
