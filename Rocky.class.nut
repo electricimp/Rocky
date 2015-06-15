@@ -4,7 +4,7 @@
 
 class Rocky {
 
-    static version = [1,2,0]
+    static version = [1,2,0];
 
     static PARSE_ERROR = "Error parsing body of request";
     static INVALID_MIDDLEWARE_ERR = "Middleware must be a function, or array of functions";
@@ -42,6 +42,10 @@ class Rocky {
     //-------------------- STATIC METHODS --------------------//
     static function getContext(id) {
         return Rocky.Context.get(id);
+    }
+
+    static function sendToAll(statuscode, response, headers = {}) {
+        Rocky.Context.sendToAll(statuscode, response, headers);
     }
 
     //-------------------- PUBLIC METHODS --------------------//
@@ -100,7 +104,6 @@ class Rocky {
         return this;
     }
 
-    // Attaches one or more middlewares
     function use(middlewares) {
         if(typeof middlewares == "function") {
             _handlers.middlewares.push(middlewares);
@@ -115,12 +118,8 @@ class Rocky {
         return this;
     }
 
-    function sendToAll(statuscode, response, headers = {}) {
-        Rocky.Context._sendToAll(statuscode, response, headers);
-    }
-
     //-------------------- PRIVATE METHODS --------------------//
-    // Adds access control headers
+    // Adds default access control headers
     function _addAccessControl(res) {
         res.header("Access-Control-Allow-Origin", "*")
         res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -129,7 +128,6 @@ class Rocky {
 
     // The HTTP Request Handler
     function _onrequest(req, res) {
-
         // Add access control headers if required
         if (_accessControl) _addAccessControl(res);
 
@@ -349,6 +347,7 @@ class Rocky {
     function _defaultExceptionHandler(context, ex) {
         context.send(500, "Agent Error: " + ex);
     }
+
 }
 
 class Rocky.Route {
@@ -373,7 +372,7 @@ class Rocky.Route {
             foreach (handlerName, handler in defaultHandlers) {
                 // Copy over the non-middleware handlers
                 if (handlerName != "middlewares") {
-                    if (!hasHandler(handlerName)) { setHandler(handlerName, handler); }
+                    if (!hasHandler(handlerName)) { _setHandler(handlerName, handler); }
                 } else {
                     // Copy the handlers over so we can iterate through in
                     // the correct order:
@@ -385,22 +384,31 @@ class Rocky.Route {
 
             // Execute the middlewares
             foreach(middleware in _handlers.middlewares) {
-                // Invoke the middleware
-                middleware(context);
+                try {
+                    // Invoke the middleware
+                    middleware(context);
 
-                // If we sent a response in the middleware, we're done
-                if (context.isComplete()) return;
+                    // If we sent a response, drop out
+                    if (context.isComplete()) return;
+                } catch(ex) {
+                    _handlers.onException(context, ex);
+                }
             }
+
+            // Otherwise, run the rest of the flow
 
             // Check if we're authorized
             if (_handlers.authorize(context)) {
+
                 // If we're authorized, execute the route handler
                 _callback(context);
             } else {
-                // f we unauthorized, execute the onUnauthorized handler
+
+                // if we unauthorized, execute the onUnauthorized handler
                 _handlers.onUnauthorized(context);
             }
         } catch(ex) {
+
             // If we ran into an error at any point in the process,
             // invoke the onException handler (this will excute if
             // there was an error in any handler or middleware..)
@@ -409,25 +417,24 @@ class Rocky.Route {
     }
 
     function authorize(callback) {
-        return setHandler("authorize", callback);
+        return _setHandler("authorize", callback);
     }
 
     function onException(callback) {
-        return setHandler("onException", callback);
+        return _setHandler("onException", callback);
     }
 
     function onUnauthorized(callback) {
-        return setHandler("onUnauthorized", callback);
+        return _setHandler("onUnauthorized", callback);
     }
 
     function onTimeout(callback, t = null) {
         if (t == null) t = _timeout;
         _timeout = t;
 
-        return setHandler("onTimeout", callback);
+        return _setHandler("onTimeout", callback);
     }
 
-    // Attaches one or more middlewares
     function use(middlewares) {
         if (!hasHandler("middlewares")) { _handlers["middlewares"] <- [] };
 
@@ -440,16 +447,6 @@ class Rocky.Route {
         } else {
             throw INVALID_MIDDLEWARE_ERR;
         }
-
-        return this;
-    }
-
-    function setHandler(handlerName, callback) {
-        // Create handler slot if required
-        if (!hasHandler(handlerName)) { _handlers[handlerName] <- null; }
-
-        // Set the handler
-        _handlers[handlerName] = callback;
 
         return this;
     }
@@ -472,6 +469,17 @@ class Rocky.Route {
 
     function setTimeout(timeout) {
         return _timeout = timeout;
+    }
+
+    //-------------------- PRIVATE METHODS --------------------//
+    function _setHandler(handlerName, callback) {
+        // Create handler slot if required
+        if (!hasHandler(handlerName)) { _handlers[handlerName] <- null; }
+
+        // Set the handler
+        _handlers[handlerName] = callback;
+
+        return this;
     }
 
 }
@@ -508,6 +516,17 @@ class Rocky.Context {
             return _contexts[id];
         } else {
             return null;
+        }
+    }
+
+    // Closes ALL contexts
+    static function sendToAll(statuscode, response, headers = {}) {
+        // Send to all active contexts
+        foreach (context in _contexts) {
+            foreach (key, value in headers) {
+                context.setHeader(key, value);
+            }
+            context.send(statuscode, response);
         }
     }
 
@@ -582,18 +601,6 @@ class Rocky.Context {
 
     function isComplete() {
         return sent;
-    }
-
-    //-------------------- PRIVATE METHODS --------------------//
-    // Closes ALL contexts
-    function _sendToAll(statuscode, response, headers = {}) {
-        // Send to all active contexts
-        foreach (context in _contexts) {
-            foreach (key, value in headers) {
-                context.setHeader(key, value);
-            }
-            context.send(statuscode, response);
-        }
     }
 
 }
