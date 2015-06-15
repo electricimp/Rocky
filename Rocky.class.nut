@@ -4,10 +4,12 @@
 
 class Rocky {
 
-    static version = [1,1,1]
+    static version = [1,2,0]
 
     static PARSE_ERROR = "Error parsing body of request";
+    static INVALID_MIDDLEWARE_ERR = "Middleware must be a function, or array of functions";
 
+    // Route handlers, event handers, and middleware
     _handlers = null;
 
     // Settings:
@@ -17,23 +19,32 @@ class Rocky {
     _accessControl = true;
 
     constructor(settings = {}) {
+        // Initialize settings
         if ("timeout" in settings) _timeout = settings.timeout;
         if ("allowUnsecure" in settings) _allowUnsecure = settings.allowUnsecure;
         if ("strictRouting" in settings) _strictRouting = settings.strictRouting;
         if ("accessControl" in settings) _accessControl = settings.accessControl;
 
+        // Inititalize handlers & middleware
         _handlers = {
             authorize = _defaultAuthorizeHandler.bindenv(this),
             onUnauthorized = _defaultUnauthorizedHandler.bindenv(this),
             onTimeout = _defaultTimeoutHandler.bindenv(this),
             onNotFound = _defaultNotFoundHandler.bindenv(this),
             onException = _defaultExceptionHandler.bindenv(this),
+            middlewares = []
         };
 
+        // Bind the onrequest handler
         http.onrequest(_onrequest.bindenv(this));
     }
 
-    /************************** [ PUBLIC FUNCTIONS ] **************************/
+    //-------------------- STATIC METHODS --------------------//
+    static function getContext(id) {
+        return Rocky.Context.get(id);
+    }
+
+    //-------------------- PUBLIC METHODS --------------------//
     function on(verb, signature, callback) {
         // Register this signature and verb against the callback
         verb = verb.toupper();
@@ -89,15 +100,26 @@ class Rocky {
         return this;
     }
 
+    // Attaches one or more middlewares
+    function use(middlewares) {
+        if(typeof middlewares == "function") {
+            _handlers.middlewares.push(middlewares);
+        } else if (typeof _handlers.middlewares == "array") {
+            foreach(middleware in middlewares) {
+                use(middleware);
+            }
+        } else {
+            throw INVALID_MIDDLEWARE_ERR;
+        }
+
+        return this;
+    }
+
     function sendToAll(statuscode, response, headers = {}) {
         Rocky.Context._sendToAll(statuscode, response, headers);
     }
 
-    function getContext(id) {
-        return Rocky.Context.get(id);
-    }
-
-    /************************** [ PRIVATE FUNCTIONS ] *************************/
+    //-------------------- PRIVATE METHODS --------------------//
     // Adds access control headers
     function _addAccessControl(res) {
         res.header("Access-Control-Allow-Origin", "*")
@@ -105,6 +127,7 @@ class Rocky {
         res.header("Access-Control-Allow-Methods", "POST, PUT, GET, OPTIONS");
     }
 
+    // The HTTP Request Handler
     function _onrequest(req, res) {
 
         // Add access control headers if required
@@ -306,7 +329,7 @@ class Rocky {
         return null;
     }
 
-    /*************************** [ DEFAULT HANDLERS ] *************************/
+    //-------------------- DEFAULT HANDLERS --------------------//
     function _defaultAuthorizeHandler(context) {
         return true;
     }
@@ -334,27 +357,53 @@ class Rocky.Route {
     _callback = null;
 
     constructor(callback) {
-        _handlers = {};
+        _handlers = {
+            middlewares = []
+        };
         _timeout = 10;
         _callback = callback;
     }
 
-    /************************** [ PUBLIC FUNCTIONS ] **************************/
+    //-------------------- PUBLIC METHODS --------------------//
     function execute(context, defaultHandlers) {
         try {
             // setup handlers
             // NOTE: Copying these handlers into the route might have some unintended side effect.
             //       Consider changing this if issues come up.
             foreach (handlerName, handler in defaultHandlers) {
-                if (!hasHandler(handlerName)) { setHandler(handlerName, handler); }
+                // Copy over the non-middleware handlers
+                if (handlerName != "middlewares") {
+                    if (!hasHandler(handlerName)) { setHandler(handlerName, handler); }
+                } else {
+                    // Copy the handlers over so we can iterate through in
+                    // the correct order:
+                    for (local i = handler.len() -1; i >= 0; i--) {
+                        _handlers.middlewares.insert(0, handler[i]);
+                    }
+                }
             }
 
+            // Execute the middlewares
+            foreach(middleware in _handlers.middlewares) {
+                // Invoke the middleware
+                middleware(context);
+
+                // If we sent a response in the middleware, we're done
+                if (context.isComplete()) return;
+            }
+
+            // Check if we're authorized
             if (_handlers.authorize(context)) {
+                // If we're authorized, execute the route handler
                 _callback(context);
             } else {
+                // f we unauthorized, execute the onUnauthorized handler
                 _handlers.onUnauthorized(context);
             }
         } catch(ex) {
+            // If we ran into an error at any point in the process,
+            // invoke the onException handler (this will excute if
+            // there was an error in any handler or middleware..)
             _handlers.onException(context, ex);
         }
     }
@@ -376,6 +425,23 @@ class Rocky.Route {
         _timeout = t;
 
         return setHandler("onTimeout", callback);
+    }
+
+    // Attaches one or more middlewares
+    function use(middlewares) {
+        if (!hasHandler("middlewares")) { _handlers["middlewares"] <- [] };
+
+        if(typeof middlewares == "function") {
+            _handlers.middlewares.push(middlewares);
+        } else if (typeof _handlers.middlewares == "array") {
+            foreach(middleware in middlewares) {
+                use(middleware);
+            }
+        } else {
+            throw INVALID_MIDDLEWARE_ERR;
+        }
+
+        return this;
     }
 
     function setHandler(handlerName, callback) {
@@ -436,8 +502,8 @@ class Rocky.Context {
         _contexts[id] <- this;
     }
 
-    /************************** [ PUBLIC FUNCTIONS ] **************************/
-    function get(id) {
+    //-------------------- STATIC METHODS --------------------//
+    static function get(id) {
         if (id in _contexts) {
             return _contexts[id];
         } else {
@@ -445,6 +511,7 @@ class Rocky.Context {
         }
     }
 
+    //-------------------- PUBLIC METHODS --------------------//
     function isbrowser() {
         return (("accept" in req.headers) && (req.headers.accept.find("text/html") != null));
     }
@@ -513,9 +580,12 @@ class Rocky.Context {
         }.bindenv(this))
     }
 
+    function isComplete() {
+        return sent;
+    }
 
-    /************************** [ PRIVATE FUNCTIONS ] *************************/
-
+    //-------------------- PRIVATE METHODS --------------------//
+    // Closes ALL contexts
     function _sendToAll(statuscode, response, headers = {}) {
         // Send to all active contexts
         foreach (context in _contexts) {
