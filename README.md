@@ -7,7 +7,7 @@ Rocky is an framework for building powerful and scalable APIs for your Electric 
   - [Rocky.put](#rocky_verb) - Creates a handler for PUT requests that match the specified signature.
   - [Rocky.post](#rocky_verb) - Creates a handler for POST requests that match the specified signature.
   - [Rocky.on](#rocky_on) - Creates a handler for requests that match the specified verb and signature.
-  - [Rocky.use](#route_use) - Binds one or more middlewares to all routes.
+  - [Rocky.use](#rocky_use) - Binds one or more middlewares to all routes.
   - [Rocky.authorize](#rocky_authorize) - Specify the default ```authorize``` handler for all routes.
   - [Rocky.onUnauthorized](#rocky_onunauthorized) - Specify the default ```onUnauthorized``` callback for all routes.
   - [Rocky.onTimeout](#rocky_ontimeout) - Set the default ```onTimeout``` handler for all routes.
@@ -23,7 +23,7 @@ Rocky is an framework for building powerful and scalable APIs for your Electric 
   - [Rocky.Route.onException](#route_onexception) - Set the default ```onException``` handler for the route.
 - [Rocky.Context](#context) - The information passed into a route handler.
   - [Rocky.Context.send](#context_send) - Sends an HTTP response.
-  - [Rocky.Context.isComplete](#context_isComplete) - Returns whether a response has been sent for the current context.
+  - [Rocky.Context.isComplete](#context_iscomplete) - Returns whether a response has been sent for the current context.
   - [Rocky.Context.getHeader](#context_getheader) - Attempts to get the specified header from the request object.
   - [Rocky.Context.setHeader](#context_setheader) - Sets the specified header in the response object.
   - [Rocky.Context.req](#context_req) - The HTTP Request Table.
@@ -32,7 +32,7 @@ Rocky is an framework for building powerful and scalable APIs for your Electric 
   - [Rocky.Context.path](#context_path) - The full path the request was made to.
   - [Rocky.Context.matches](#context_matches) - An array of matches to the path's regular expression.
   - [Rocky.Context.isBrowser](#context_isbrowser) - Returns true if the request contains an ```Accept: text/html``` header.
-  - [Rocky.Context.sendToAll](#context_sendToAll) - Static method that sens a response to *all* open requests/contexts.
+  - [Rocky.Context.sendToAll](#context_sendtoall) - Static method that sens a response to *all* open requests/contexts.
 - [Middleware](#middleware) - Used to transform and verify data before the main request handler.
   - [Order of Execution](#middleware_orderofexecution) - Explanation of the execution flow for middleware and event handlers.
 - [CORS Requests](#cors_requests) - How to handle cross-site HTTP requests ([CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)).
@@ -270,7 +270,7 @@ app.get("/", function(context) {
 });
 ```
 
-<div id="rocky_use"><h3>use(callback)</h3></div>
+<div id="route_use"><h3>use(callback)</h3></div>
 
 The *use* method allows you to attach a middleware, or array of middleware to a specific route.
 
@@ -571,7 +571,9 @@ The *sent* property is deprecated - developers should move to using the [isCompl
 
 Middleware allows you to easily (and scalably) add new functionality to your request handlers. Middleware can be attached at either a global level through [Rocky.use](#rocky_use), or at the route level with [Rocky.Route.use](#route_use). Middlewares are invoked before the main request handler and can aid in debugging, data validation, and more!
 
-Middlewares are functions that a single parameter - a [Rocky.Context](#context) object. Middlewares can transform the context object, respond the the request, or take no action at all. Responding to a request in a middleware prevents further middlewares and event handlers (such as authorize, onAuthorized, etc) from executing.
+Middlewares are invoked with a single parameter - a [Rocky.Context](#context) object. Middlewares can be used to transform the context object, respond the the request, or take no action at all.
+
+Responding to a request in a middleware prevents further middlewares and event handlers (such as authorize, onAuthorized, etc) from executing.
 
 In the following example, we create a middleware that logs debug information for all incoming requests:
 
@@ -604,7 +606,7 @@ function readAuthMiddleware(context) {
   local apiKey = context.getHeader("API-KEY");
 
   // send a response will prevent the route handler from executing
-  if (!(apiKey in readKeys)) context.send(401, { "error": "UNAUTHORIZED" });
+  if (apiKey == null || !(apiKey in readKeys)) { context.send(401, { "error": "UNAUTHORIZED" }); }
 }
 
 // Middleware to check if incoming request has access to write data
@@ -612,7 +614,7 @@ function writeAuthMiddleware(context) {
   local apiKey = context.getHeader("API-KEY");
 
   // send a response will prevent the route handler from executing
-  if (!(apiKey in writeKeys)) context.send(401, { "error": "UNAUTHORIZED" });
+  if (apiKey == null || !(apiKey in writeKeys)) context.send(401, { "error": "UNAUTHORIZED" });
 }
 
 // Middleware to validate incoming data
@@ -627,7 +629,7 @@ app <- Rocky();
 // Requests to GET /data will execute readAuthMiddleware,
 // then the route handler if the readAuthMiddle didn't respond
 app.get("/data", function(context) {
-
+    context.send(200, data);
 }).use([ readAuthMiddleware ]);
 
 // Requests to POST /data will execute writeAuthMiddleware,
@@ -641,38 +643,36 @@ app.post("/data", function(context) {
   device.send("data", context.req.body);
 
   context.send({ "message": "Success!" });
-}).use([ readAuthMiddleware, validateDataMiddleware ]);
-```
+}).use([ writeAuthMiddleware, validateDataMiddleware ]);```
 
 <div id="middleware_orderofexecution"><h3>Order of Execution</h3></div>
 
 When Rocky processes an incoming HTTPS request, the following takes place:
 
-- Add AccessControl headers unless the `accessControl` setting is set to false
-- Reject HTTP requests if the `allowUnsecure` setting is not set to false
-- Parse body (and send a 400 response if there was an error parsing the data)
+- Rocky adds the access control headers unless the `accessControl` setting is set to false
+- Rocky rejects non-HTTPS requests unless the `allowUnsecure` setting is not set to true
+- Rocky parsees the body (and send a 400 response if there was an error parsing the data)
 - Invoke the Rocky-level middlewares
 - Invoke the Route-level middlewares
-- Invoke the authorize function, and when authorized returns:
-  - **true** - invoke the request handler
-  - **false** - invoke the onUnauthorized handler
+- Invoke the authorize function, and based on the return on authorize:
+  - Invokes the request handler (is authorize returned `true`)
+  - Invokes the onUnauthorized handler (is authorize returned `false`)
 
 If any middlewares send a response, no further action will be take on the request.
 
 If a runtime errors occurs after the data has been parsed, the onError handler will be invoked.
 
-<div id="cors-requests"><h2>CORS Requests</h2></div>
+<div id="cors_requests"><h2>CORS Requests</h2></div>
 
-Some browsers will send a [Preflight](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing#Preflight_example) request to determin if they have the permission to perform the action.
+During an cross domain AJAX request, some browsers will send a [preflight request](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing#Preflight_example) to determin if it has the permissions needed to perform the action.
 
-Adding a wildcard OPTIONS handler will ensure the preflight checks pass (assuming you send back the expected headers):
+To accomodate preflight requests you can add a wildcard OPTIONS handler:
 
 ```squirrel
 app.on("OPTIONS", ".*", function(context) {
   context.send("OK");
 });
 ```
-
 
 By default, Rocky automatically adds the following headers to all responses:
 
@@ -687,7 +687,7 @@ If you wish to override the default headers, you can instantiate Rocky with the 
 ```squirrel
 function customCORSMiddleware(context) {
     context.setHeader("Access-Control-Allow-Origin", "*");
-    context.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    context.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, X-Version");
     context.setHeader("Access-Control-Allow-Methods", "POST, PUT, PATCH, GET, OPTIONS");
 }
 
