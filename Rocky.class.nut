@@ -365,55 +365,24 @@ class Rocky.Route {
 
     //-------------------- PUBLIC METHODS --------------------//
     function execute(context, defaultHandlers) {
-        try {
-            // setup handlers
-            // NOTE: Copying these handlers into the route might have some unintended side effect.
-            //       Consider changing this if issues come up.
-            foreach (handlerName, handler in defaultHandlers) {
-                // Copy over the non-middleware handlers
-                if (handlerName != "middlewares") {
-                    if (!hasHandler(handlerName)) { _setHandler(handlerName, handler); }
-                } else {
-                    // Copy the handlers over so we can iterate through in
-                    // the correct order:
-                    for (local i = handler.len() -1; i >= 0; i--) {
-                        _handlers.middlewares.insert(0, handler[i]);
-                    }
-                }
-            }
-
-            // Execute the middlewares
-            foreach(middleware in _handlers.middlewares) {
-                try {
-                    // Invoke the middleware
-                    middleware(context);
-
-                    // If we sent a response, drop out
-                    if (context.isComplete()) return;
-                } catch(ex) {
-                    _handlers.onException(context, ex);
-                }
-            }
-
-            // Otherwise, run the rest of the flow
-
-            // Check if we're authorized
-            if (_handlers.authorize(context)) {
-
-                // If we're authorized, execute the route handler
-                _callback(context);
+        // setup handlers
+        // NOTE: Copying these handlers into the route might have some unintended side effect.
+        //       Consider changing this if issues come up.
+        foreach (handlerName, handler in defaultHandlers) {
+            // Copy over the non-middleware handlers
+            if (handlerName != "middlewares") {
+                if (!hasHandler(handlerName)) { _setHandler(handlerName, handler); }
             } else {
-
-                // if we unauthorized, execute the onUnauthorized handler
-                _handlers.onUnauthorized(context);
+                // Copy the handlers over so we can iterate through in
+                // the correct order:
+                for (local i = handler.len() -1; i >= 0; i--) {
+                    _handlers.middlewares.insert(0, handler[i]);
+                }
             }
-        } catch(ex) {
-
-            // If we ran into an error at any point in the process,
-            // invoke the onException handler (this will excute if
-            // there was an error in any handler or middleware..)
-            _handlers.onException(context, ex);
         }
+
+        // Run all the handlers
+        _invokeNextHandler(context);
     }
 
     function authorize(callback) {
@@ -472,6 +441,45 @@ class Rocky.Route {
     }
 
     //-------------------- PRIVATE METHODS --------------------//
+
+    // Invokes the next middleware, and moves on the
+    // authorize/callback/onUnauthorized flow when done with middlewares
+    function _invokeNextHandler(context, idx = 0) {
+        // If we've sent a response, we're done
+        if (context.isComplete()) return;
+
+        // check if we have middlewares left to execute
+        if (idx < _handlers.middlewares.len()) {
+            try {
+                // if we do, execute them (with a next() function for the next middleware)
+                _handlers.middlewares[idx](context, _nextGenerator(context, idx+1));
+            } catch (ex) {
+                _handlers.onException(context, ex);
+            }
+        } else {
+            // Otherwise, run the rest of the flow
+            try {
+                // Check if we're authorized
+                if (_handlers.authorize(context)) {
+                    // If we're authorized, execute the route handler
+                    _callback(context);
+                } else {
+                    // if we unauthorized, execute the onUnauthorized handler
+                    _handlers.onUnauthorized(context);
+                }
+            } catch (ex) {
+                _handlers.onException(context, ex);
+            }
+        }
+    }
+
+    // Generator method to create next() functions for middleware
+    function _nextGenerator(context, idx) {
+        return function() { _invokeNextHandler(context, idx); }.bindenv(this);
+    }
+
+
+    // Sets a handlers (used internally to simplify code)
     function _setHandler(handlerName, callback) {
         // Create handler slot if required
         if (!hasHandler(handlerName)) { _handlers[handlerName] <- null; }
