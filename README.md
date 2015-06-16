@@ -643,7 +643,8 @@ app.post("/data", function(context) {
   device.send("data", context.req.body);
 
   context.send({ "message": "Success!" });
-}).use([ writeAuthMiddleware, validateDataMiddleware ]);```
+}).use([ writeAuthMiddleware, validateDataMiddleware ]);
+```
 
 <div id="middleware_orderofexecution"><h3>Order of Execution</h3></div>
 
