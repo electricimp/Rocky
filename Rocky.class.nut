@@ -510,6 +510,7 @@ class Rocky.Context {
         res = _res;
         sent = false;
         time = date();
+        userdata = {};
 
         // Identify and store the context
         do {
