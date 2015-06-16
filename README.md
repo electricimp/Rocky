@@ -60,10 +60,10 @@ The default settings are listed below:
 
 ```squirrel
 defaults <- {
-  accessControl = true,
-  allowUnsecure = false,
-  strictRouting = false,
-  timeout = 10
+    accessControl = true,
+    allowUnsecure = false,
+    strictRouting = false,
+    timeout = 10
 }
 ```
 
@@ -80,7 +80,7 @@ When a match is found on the verb (as specified by the method) and the *signatur
 // responds with ```200, { "message": "hello world "}```
 // when the user makes a GET request to the agent URL:
 app.get("/", function(context) {
-  context.send({ message = "hello world" })
+    context.send({ message = "hello world" })
 })
 ```
 
@@ -91,17 +91,17 @@ Signatures can either be fully qualified paths (```/led/state```) or include reg
 ```squirrel
 // Get a user
 app.get("/users/([^/]*)", function(context) {
-  // grab the username from the regex
-  // (context.matches[0] will always be the full path)
-  local username = context.matches[1];
+    // grab the username from the regex
+    // (context.matches[0] will always be the full path)
+    local username = context.matches[1];
 
-  if (username in usersTable) {
-    // if we found the user, return the user object
-    context.send(usersTable[username]);
-  } else {
-    // if the user doesn't exist, return a 404
-    context.send(404, { error = "Unknown User" });
-  }
+    if (username in usersTable) {
+        // if we found the user, return the user object
+        context.send(usersTable[username]);
+    } else {
+        // if the user doesn't exist, return a 404
+        context.send(404, { error = "Unknown User" });
+    }
 });
 ```
 
@@ -112,19 +112,19 @@ The *on* method allows you to create APIs that use verbs other than GET, PUT, an
 ```squirrel
 // Delete a user
 app.on("delete", "/users/([^/]*)", function(context) {
-  // grab the username from the regex
-  // (context.matches[0] will always be the full path)
-  local username = context.matches[1];
+    // grab the username from the regex
+    // (context.matches[0] will always be the full path)
+    local username = context.matches[1];
 
-  if (username in usersTable) {
-    // if we found the user,
-    // delete it, and return 201
-    delete usersTable[username]
-    context.send(201, null);
-  } else {
-    // if the user doesn't exist, return a 404
-    context.send(404, { error = "Unknown User" });
-  }
+    if (username in usersTable) {
+        // if we found the user,
+        // delete it, and return 201
+        delete usersTable[username]
+        context.send(201, null);
+    } else {
+        // if the user doesn't exist, return a 404
+        context.send(404, { error = "Unknown User" });
+    }
 });
 ```
 
@@ -134,10 +134,13 @@ The *use* method allows you to attach a middleware, or array of middleware to th
 
 ```squirrel
 // Create a function to add the specific CORS headers we want:
-function customCORSMiddleware(context) {
+function customCORSMiddleware(context, next) {
     context.setHeader("Access-Control-Allow-Origin", "*");
     context.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     context.setHeader("Access-Control-Allow-Methods", "POST, PUT, PATCH, GET, OPTIONS");
+
+    // invoke the next middleware
+    next();
 }
 
 app <- Rocky({ "accessControl": false });
@@ -163,8 +166,8 @@ The authorize method is executed before the main request handler.
 
 ```squirrel
 app.authorize(function(context) {
-  // ensure user has a valid api key
-  return (context.getHeader("api-key") in apiKeys);
+    // ensure user has a valid api key
+    return (context.getHeader("api-key") in apiKeys);
 });
 ```
 
@@ -174,7 +177,7 @@ The *onUnauthorized* method allows you to configure the default response to requ
 
 ```squirrel
 app.onUnauthorized(function(context) {
-  context.send(401, { message = "Unauthorized" });
+    context.send(401, { message = "Unauthorized" });
 });
 ```
 
@@ -184,7 +187,7 @@ The *onTimeout* method allows you to configure the default response to requests 
 
 ```squirrel
 app.onTimeout(function(context) {
-  context.send(408, { message = "Agent Timeout" });
+    context.send(408, { message = "Agent Timeout" });
 });
 ```
 
@@ -194,7 +197,7 @@ The *onNotFound* method allows you to configure the response handler for request
 
 ```squirrel
 app.onNotFound(function(context) {
-  context.send(404, { message = "Oh snaps, the resource you're looking for doesn't exist!" });
+    context.send(404, { message = "Oh snaps, the resource you're looking for doesn't exist!" });
 });
 ```
 
@@ -204,7 +207,7 @@ The *onException* method allows you to configure the global response handler for
 
 ```squirrel
 app.onException(function(context, ex) {
-  context.send(500, { message = "Internal Agent Error", error = ex });
+    context.send(500, { message = "Internal Agent Error", error = ex });
 });
 ```
 
@@ -214,28 +217,28 @@ Every [Rocky.Context](#context) object created by Rocky is assigned a unique ID 
 
 ```squirrel
 app.on("/temp", function(context) {
-  // send a getTemp request to the device, and pass context.id as the data
-  device.send("getTemp", context.id);
+    // send a getTemp request to the device, and pass context.id as the data
+    device.send("getTemp", context.id);
 });
 
 device.on("getTempResponse", function(data) {
-  // when we get a getTempResponse message, get the context
-  local context = Rocky.getContext(data.id);
+    // when we get a getTempResponse message, get the context
+    local context = Rocky.getContext(data.id);
 
-  // then send the response using that context
-  if (!context.send) {
-    context.send(200, { temp = data.temp });
-  }
+    // then send the response using that context
+    if (!context.send) {
+        context.send(200, { temp = data.temp });
+    }
 });
 ```
 
 ```squirrel
 // device code
 agent.on("getTemp", function(id) {
-  local temp = getTemp();
-  // when we get a "getTemp" message, send back a response that includes
-  // the id passed to the device, and the temperature data
-  agent.send("getTempResponse", { id = id, temp = temp });
+    local temp = getTemp();
+    // when we get a "getTemp" message, send back a response that includes
+    // the id passed to the device, and the temperature data
+    agent.send("getTempResponse", { id = id, temp = temp });
 });
 ```
 
@@ -245,12 +248,12 @@ The static *sendToAll* method sends a response to **all** open requests. This is
 
 ```squirrel
 app.on("/poll", function(context) {
-  // do nothing
+    // do nothing
 });
 
 // when we get data - send it to all open requests
 device.on("data", function(data) {
-  Rocky.sendToAll(200, data);
+    Rocky.sendToAll(200, data);
 });
 ```
 
@@ -262,11 +265,11 @@ All methods that affect the behaviour of a route are designed to be used in a fl
 
 ```squirrel
 app.get("/", function(context) {
-  context.send({ message = "hello world" });
+    context.send({ message = "hello world" });
 }).authorize(function(context) {
-  return (context.getHeader("api-key") in apiKeys);
+    return (context.getHeader("api-key") in apiKeys);
 }).onUnauthorized(function(context) {
-  context.send(401, { message = "Unauthorized" });
+    context.send(401, { message = "Unauthorized" });
 });
 ```
 
@@ -279,10 +282,13 @@ app <- Rocky();
 
 // Custom Middleware to validate new users
 function validateNewUserMiddleware(context) {
-  if (!("username" in context.req.body)) context.send(400, "Required parameter 'username' missing");
-  if ("username" in usernames) context.send(400, "Requested username already exists");
+    if (!("username" in context.req.body)) context.send(400, "Required parameter 'username' missing");
+    if ("username" in usernames) context.send(400, "Requested username already exists");
 
-  if (!("passwordHash" in context.req.body)) context.send(400, "Required parameter 'passwordHash' missing");
+    if (!("passwordHash" in context.req.body)) context.send(400, "Required parameter 'passwordHash' missing");
+
+    // invoke the next middleware
+    next();
 }
 
 app.post("/users", function(context) {
@@ -304,13 +310,13 @@ The authorize method is executed before the main request handler.
 ```squirrel
 // Delete a user
 app.on("delete", "/users/([^/]*)", function(context) {
-  // grab the username from the regex
-  local username = context.matches[1];
+    // grab the username from the regex
+    local username = context.matches[1];
 
-  delete users[username];
-  context.send(201);
+    delete users[username];
+    context.send(201);
 }).authorize(function(context) {
-  return (context.getHeader("api-key") in apiKeys.admin);
+    return (context.getHeader("api-key") in apiKeys.admin);
 });
 ```
 
@@ -321,15 +327,15 @@ The *onUnauthorized* method allows you to configure a route level response to re
 ```squirrel
 // Delete a user
 app.on("delete", "/users/([^/]*)", function(context) {
-  // grab the username from the regex
-  local username = context.matches[1];
+    // grab the username from the regex
+    local username = context.matches[1];
 
-  delete users[username];
-  context.send(201);
+    delete users[username];
+    context.send(201);
 }).authorize(function(context) {
-  return (context.getHeader("api-key") in apiKeys.admin);
+    return (context.getHeader("api-key") in apiKeys.admin);
 }).onUnauthorized(function(context) {
-  context.send(401, { message = "API-Key does not have delete permissions for the users resource." });
+    context.send(401, { message = "API-Key does not have delete permissions for the users resource." });
 });
 ```
 
@@ -339,16 +345,16 @@ The *onTimeout* method allows you to configure a route level response to request
 
 ```squirrel
 app.get("/", function(context) {
-  device.send("getTemp", context.id);
+    device.send("getTemp", context.id);
 }).onTimeout(function(context) {
-  context.send(408, { message = "Device timeout fetching temp data"});
+    context.send(408, { message = "Device timeout fetching temp data"});
 });
 
 device.on("getTempResponse", function(data) {
-  local context = Rocky.getContext(data.id);
-  if (!context.sent) {
-    context.send(200, { temp = data.temp });
-  }
+    local context = Rocky.getContext(data.id);
+    if (!context.sent) {
+        context.send(200, { temp = data.temp });
+    }
 });
 ```
 
@@ -358,10 +364,10 @@ The *onException* method allows you to configure a route level response handler 
 
 ```squirrel
 app.get("/", function(context) {
-  x = 5;  // throws an error
-  context.send(200, { data = x });
+    x = 5;  // throws an error
+    context.send(200, { data = x });
 }).onException(function(context, ex) {
-  context.send(500, { message = "Agent Error", error = ex });
+    context.send(500, { message = "Agent Error", error = ex });
 });
 ```
 
@@ -380,7 +386,7 @@ The method returns `false` if the context has already been used to respond to th
 
 ```
 app.get("/color", function(context) {
-  context.send(200, { color = led.color })
+    context.send(200, { color = led.color })
 })
 ```
 
@@ -390,7 +396,7 @@ The *send* method may also be invoked without a status code - when invoked in th
 
 ```squirrel
 app.get("/", function(context) {
-  context.send("OK");  // equivalent to context.send(200, "OK");
+    context.send("OK");  // equivalent to context.send(200, "OK");
 })
 ```
 
@@ -407,9 +413,9 @@ The *getHeader* method attempts to retreive a header from the HTTP Request table
 auth <- "Basic 55de9ca4317bcee87146df33d308ca2d";
 
 app.get("/", function(context) {
-  context.send(200, "OK");
+    context.send(200, "OK");
 }).authorize(function(context) {
-  return (context.getHeader("Authorization") == auth);
+    return (context.getHeader("Authorization") == auth);
 });
 ```
 
@@ -419,9 +425,9 @@ The *setHeader* method adds the specified header to the HTTPResponse object sent
 
 ```squirrel
 app.on("/", function(context) {
-  // redirect requests made to / to /index.html
-  context.setHeader("Location", http.agenturl() + "/index.html");
-  context.send(301);
+    // redirect requests made to / to /index.html
+    context.setHeader("Location", http.agenturl() + "/index.html");
+    context.send(301);
 });
 ```
 
@@ -433,33 +439,33 @@ If a ```content-type``` header was included in the request, and the content-type
 
 ```squirrel
 app.post("/users", function(context) {
-  local username = null;
-  local user = {
-    name = null,
-    twitter = null
-  }
+    local username = null;
+    local user = {
+        name = null,
+        twitter = null
+    }
 
-  if (!("username" in context.req.body)) {
-    context.send(400, { message = "Missing Required Parameter 'username'" });
-    return;
-  }
+    if (!("username" in context.req.body)) {
+        context.send(400, { message = "Missing Required Parameter 'username'" });
+        return;
+    }
 
-  username = context.req.body.username;
+    username = context.req.body.username;
 
-  if (username in users) {
-    context.send(400, { message = format("Username '%s' already taken.", username) });
-    return;
-  }
+    if (username in users) {
+        context.send(400, { message = format("Username '%s' already taken.", username) });
+        return;
+    }
 
-  if ("name" in context.req.body) user.name = context.req.body.name;
-  if ("twitter" in context.req.body) user.twitter = context.req.body.twitter;
+    if ("name" in context.req.body) user.name = context.req.body.name;
+    if ("twitter" in context.req.body) user.twitter = context.req.body.twitter;
 
-  users[username] <- user;
+    users[username] <- user;
 
-  /******************** SET THE LOCATION HEADER ********************/
-  context.setHeader("location", format("/users/%s", username));
+    /******************** SET THE LOCATION HEADER ********************/
+    context.setHeader("location", format("/users/%s", username));
 
-  context.send(201);
+    context.send(201);
 });```
 ```
 
@@ -473,14 +479,14 @@ The *userdata* property can be used by the developer to store any information re
 
 ```squirrel
 app.on("/temp", function(context) {
-  context.userdata = { startTime = time() };
-  device.send("getTemp", context.id);
+    context.userdata = { startTime = time() };
+    device.send("getTemp", context.id);
 });
 
 device.on("getTempResponse", function(data) {
-  local context = app.getContext(data.id);
-  local roundTripTime = time() - context.userdata.startTime;
-  context.send(200, { temp = data.temp, requestTime = roundTripTime });
+    local context = app.getContext(data.id);
+    local roundTripTime = time() - context.userdata.startTime;
+    context.send(200, { temp = data.temp, requestTime = roundTripTime });
 });
 ```
 
@@ -490,17 +496,17 @@ The *path* property is an array that contains each element in the path. If a req
 
 ```squirrel
 app.get("/users/([^/]*)", function(context) {
-  // grab the username from the path
-  local username = context.path[1];
+    // grab the username from the path
+    local username = context.path[1];
 
-  // if the user doesn't exist:
-  if (!(username in users)) {
-    context.send(404, { message = format("No 'user' resource matching '%s'", username) });
-    return;
-  }
+    // if the user doesn't exist:
+    if (!(username in users)) {
+        context.send(404, { message = format("No 'user' resource matching '%s'", username) });
+        return;
+    }
 
-  // return the user if it exists
-  context.send(200, users[username]);
+    // return the user if it exists
+    context.send(200, users[username]);
 });
 ```
 
@@ -510,17 +516,17 @@ The *matches* property is an array that represents the results of the regular ex
 
 ```squirrel
 app.get("/users/([^/]*)", function(context) {
-  // grab the username from the regular expression matches, instead of the path array
-  local username = context.path[1];
+    // grab the username from the regular expression matches, instead of the path array
+    local username = context.path[1];
 
-  // if the user doesn't exist:
-  if (!(username in users)) {
-    context.send(404, { message = format("No 'user' resource matching '%s'", username) });
-    return;
-  }
+    // if the user doesn't exist:
+    if (!(username in users)) {
+        context.send(404, { message = format("No 'user' resource matching '%s'", username) });
+        return;
+    }
 
-  // return the user if it exists
-  context.send(200, users[username]);
+    // return the user if it exists
+    context.send(200, users[username]);
 });
 ```
 
@@ -531,12 +537,12 @@ The *isbrowser* method returns true if an ```Accept: text/html``` header was pre
 ```squirrel
 const INDEX_HTML = @"
 <html>
-  <head>
-    <title>My Agent</title>
-  </head>
-  <body>
-    <h1>Hello World!</h1>
-  </body>
+    <head>
+        <title>My Agent</title>
+    </head>
+    <body>
+        <h1>Hello World!</h1>
+    </body>
 </html>
 ";
 
@@ -545,15 +551,15 @@ app.get("/", function(context) {
 });
 
 app.get("/index.html", function(context) {
-  if(!context.isbrowser()) {
-    // if it was an API request
-    context.setHeader("location", http.agenturl());
-    context.send(301);
-    return;
-  }
+    if(!context.isbrowser()) {
+        // if it was an API request
+        context.setHeader("location", http.agenturl());
+        context.send(301);
+        return;
+    }
 
-  // if it was a browser request:
-  context.send(200, INDEX_HTML);
+    // if it was a browser request:
+    context.send(200, INDEX_HTML);
 });
 ```
 
@@ -569,9 +575,9 @@ The *sent* property is deprecated - developers should move to using the [isCompl
 
 <div id="middleware"><h2>Middleware</h2></div>
 
-Middleware allows you to easily (and scalably) add new functionality to your request handlers. Middleware can be attached at either a global level through [Rocky.use](#rocky_use), or at the route level with [Rocky.Route.use](#route_use). Middlewares are invoked before the main request handler and can aid in debugging, data validation, and more!
+Middleware allows you to easily (and scalably) add new functionality to your request handlers. Middleware can be attached at either a global level through [Rocky.use](#rocky_use), or at the route level with [Rocky.Route.use](#route_use). Middlewares are invoked before the main request handler and can aid in debugging, data validation/transformation, and more!
 
-Middlewares are invoked with a single parameter - a [Rocky.Context](#context) object. Middlewares can be used to transform the context object, respond the the request, or take no action at all.
+Middlewares are invoked with two parameters - a [Rocky.Context](#context) object, and a *next()* method. The *next* method invokes the next middleware / handler in the chain (see [Order of Execution](middleware_orderofexecution)).
 
 Responding to a request in a middleware prevents further middlewares and event handlers (such as authorize, onAuthorized, etc) from executing.
 
@@ -579,22 +585,25 @@ In the following example, we create a middleware that logs debug information for
 
 ```squirrel
 // Middleware to add some debugging information:
-function debuggingMiddleware(context) {
-  server.log("Got a request!");
-  server.log("   VERB: " + context.req.method.toupper());
-  server.log("   PATH: " + context.req.path.tolower());
-  server.log("   TIME: " + time());
+function debuggingMiddleware(context, next) {
+    server.log("Got a request!");
+    server.log("   VERB: " + context.req.method.toupper());
+    server.log("   PATH: " + context.req.path.tolower());
+    server.log("   TIME: " + time());
+
+    // invoke the next middleware
+    next();
 }
 
 app <- Rocky();
 app.use(debuggingMiddleware);
 
 app.get("/", function(context) {
-  context.send({ "message": "Hello World! "});
+    context.send({ "message": "Hello World! "});
 });
 
 app.get("/data", function(context) {
-  context.send(data);
+    context.send(data);
 });
 ```
 
@@ -602,26 +611,35 @@ Middlewares can also be uses to extend / override default event handlers. In the
 
 ```squirrel
 // Middleware to check if incoming request has access to read data
-function readAuthMiddleware(context) {
-  local apiKey = context.getHeader("API-KEY");
+function readAuthMiddleware(context, next) {
+    local apiKey = context.getHeader("API-KEY");
 
-  // send a response will prevent the route handler from executing
-  if (apiKey == null || !(apiKey in readKeys)) { context.send(401, { "error": "UNAUTHORIZED" }); }
+    // send a response will prevent the route handler from executing
+    if (apiKey == null || !(apiKey in readKeys)) { context.send(401, { "error": "UNAUTHORIZED" }); }
+
+    // invoke the next middleware
+    next();
 }
 
 // Middleware to check if incoming request has access to write data
-function writeAuthMiddleware(context) {
-  local apiKey = context.getHeader("API-KEY");
+function writeAuthMiddleware(context, next) {
+    local apiKey = context.getHeader("API-KEY");
 
-  // send a response will prevent the route handler from executing
-  if (apiKey == null || !(apiKey in writeKeys)) context.send(401, { "error": "UNAUTHORIZED" });
+    // send a response will prevent the route handler from executing
+    if (apiKey == null || !(apiKey in writeKeys)) context.send(401, { "error": "UNAUTHORIZED" });
+
+    // invoke the next middleware
+    next();
 }
 
 // Middleware to validate incoming data
-function validateDataMiddleware(context) {
-  // If required parameters are missing, send a response (which prevents the route handler from executing)
-  if (!("lowTemp" in context.req.body)) context.send(400, { "error" :"Missing required parameter 'lowTemp'" });
-  if (!("highTemp" in context.req.body)) context.send(400, { "error" :"Missing required parameter 'highTemp'" });
+function validateDataMiddleware(context, next) {
+    // If required parameters are missing, send a response (which prevents the route handler from executing)
+    if (!("lowTemp" in context.req.body)) context.send(400, { "error" :"Missing required parameter 'lowTemp'" });
+    if (!("highTemp" in context.req.body)) context.send(400, { "error" :"Missing required parameter 'highTemp'" });
+
+    // invoke the next middleware
+    next();
 }
 
 app <- Rocky();
@@ -629,21 +647,50 @@ app <- Rocky();
 // Requests to GET /data will execute readAuthMiddleware,
 // then the route handler if the readAuthMiddle didn't respond
 app.get("/data", function(context) {
-    context.send(200, data);
+      context.send(200, data);
 }).use([ readAuthMiddleware ]);
 
 // Requests to POST /data will execute writeAuthMiddleware,
 // then validateDataMiddleware,  then the route handler if both
 // middlewares didn't respond
 app.post("/data", function(context) {
-  // By the time we get here, we know we're authotized and have the
-  // data we're expecting!
+    // By the time we get here, we know we're authotized and have the
+    // data we're expecting!
 
-  // Send the data down to the device
-  device.send("data", context.req.body);
+    // Send the data down to the device
+    device.send("data", context.req.body);
 
-  context.send({ "message": "Success!" });
+    context.send({ "message": "Success!" });
 }).use([ writeAuthMiddleware, validateDataMiddleware ]);
+```
+
+The *next* method allows you to complete asynchronous operations before moving on to the next middleware or handler. In the following example, we lookup a userId from a remote service before moving on:
+
+```squirrel
+function userIdMiddleware(context, next) {
+    if (!("username" in context.req.body)) {
+        context.send(400, { "error": "Missing required parameter 'username'" });
+        next();
+    } else {
+        local username = context.req.body.username;
+        userService.getUserId(username, function(err, resp, result) {
+            if (err != null) {
+                context.send(400, { "error": err });
+            } else {
+                // stash the results in context.userdata for later use
+                local userId = result.userId;
+                context.userdata["username"] <- username;
+                context.userdata["userId"] <- result.userId;
+            }
+            next();
+        });
+    }
+}
+
+app.get("/user", function(context) {
+    local userId = context.userdata.userId;
+    context.send(users[userId]);
+}).use([ userIdMiddleware ]);
 ```
 
 <div id="middleware_orderofexecution"><h3>Order of Execution</h3></div>
@@ -671,7 +718,7 @@ To accomodate preflight requests you can add a wildcard OPTIONS handler:
 
 ```squirrel
 app.on("OPTIONS", ".*", function(context) {
-  context.send("OK");
+    context.send("OK");
 });
 ```
 
@@ -686,14 +733,17 @@ Access-Control-Allow-Methods: POST, PUT, GET, OPTIONS
 If you wish to override the default headers, you can instantiate Rocky with the `accessControl` setting set to `false`, and use a middleware to add the headers you wish to include:
 
 ```squirrel
-function customCORSMiddleware(context) {
+function customCORSMiddleware(context, next) {
     context.setHeader("Access-Control-Allow-Origin", "*");
     context.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, X-Version");
     context.setHeader("Access-Control-Allow-Methods", "POST, PUT, PATCH, GET, OPTIONS");
+
+    // invoke the next middleware
+    next();
 }
 
-app <- Rocky( { "accessControl": false })
-  .use([ customCORSMiddleware ]);
+app <- Rocky( { "accessControl": false });
+app.use([ customCORSMiddleware ]);
 ```
 
 ## License
