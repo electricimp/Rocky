@@ -2,7 +2,7 @@
 // This file is licensed under the MIT License
 // http://opensource.org/licenses/MIT
 
-#require "Rocky.class.nut:1.0.0"
+#require "Rocky.class.nut:1.2.0"
 
 /******************** Application Code ********************/
 led <- {
