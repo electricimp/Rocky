@@ -282,10 +282,12 @@ app <- Rocky();
 
 // Custom Middleware to validate new users
 function validateNewUserMiddleware(context) {
+    // Make sure they supplied a username nas password
     if (!("username" in context.req.body)) context.send(400, "Required parameter 'username' missing");
-    if (context.req.body.username in usernames) context.send(400, "Requested username already exists");
-
     if (!("passwordHash" in context.req.body)) context.send(400, "Required parameter 'passwordHash' missing");
+
+    // Ensure the username is unique
+    if (context.req.body.username in usernames) context.send(400, "Requested username already exists");
 
     // invoke the next middleware
     next();
