@@ -149,7 +149,7 @@ app <- Rocky({ "accessControl": false });
 // incoming request has the headers added
 app.use([ customCORSMiddleware ]);
 
-app.on("/", function(context) {
+app.get("/", function(context) {
     context.send(200, { "message": "Hello World" });
 });
 ```
@@ -216,7 +216,7 @@ app.onException(function(context, ex) {
 Every [Rocky.Context](#context) object created by Rocky is assigned a unique ID that can found using [context.id](#context_id). We can use this id and the static *getContext* method to retreive previously created contexts. This is primarily used for long running or asyncronous requests. In the following example, we fetch the temperature from the device when the request is made:
 
 ```squirrel
-app.on("/temp", function(context) {
+app.get("/temp", function(context) {
     // send a getTemp request to the device, and pass context.id as the data
     device.send("getTemp", context.id);
 });
@@ -247,7 +247,7 @@ agent.on("getTemp", function(id) {
 The static *sendToAll* method sends a response to **all** open requests. This is most useful in APIs that allow for long-polling.
 
 ```squirrel
-app.on("/poll", function(context) {
+app.get("/poll", function(context) {
     // do nothing
 });
 
@@ -352,7 +352,7 @@ app.get("/", function(context) {
 
 device.on("getTempResponse", function(data) {
     local context = Rocky.getContext(data.id);
-    if (!context.sent) {
+    if (!context.isComplete()]) {
         context.send(200, { temp = data.temp });
     }
 });
@@ -424,7 +424,7 @@ app.get("/", function(context) {
 The *setHeader* method adds the specified header to the HTTPResponse object sent during [context.send](#context_send). In the following example, we create a new user resource, and return the location of that resource with a ```location``` header:
 
 ```squirrel
-app.on("/", function(context) {
+app.get("/", function(context) {
     // redirect requests made to / to /index.html
     context.setHeader("Location", http.agenturl() + "/index.html");
     context.send(301);
@@ -478,7 +478,7 @@ The *id* property is a unique id that identifies the context. This is primairly 
 The *userdata* property can be used by the developer to store any information relevant to the current context. This is primairly used during long running tasks and asynchronous requests.
 
 ```squirrel
-app.on("/temp", function(context) {
+app.get("/temp", function(context) {
     context.userdata = { startTime = time() };
     device.send("getTemp", context.id);
 });
