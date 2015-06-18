@@ -32,7 +32,7 @@ Rocky is an framework for building powerful and scalable APIs for your Electric 
   - [Rocky.Context.path](#context_path) - The full path the request was made to.
   - [Rocky.Context.matches](#context_matches) - An array of matches to the path's regular expression.
   - [Rocky.Context.isBrowser](#context_isbrowser) - Returns true if the request contains an ```Accept: text/html``` header.
-  - [Rocky.Context.sendToAll](#context_sendtoall) - Static method that sens a response to *all* open requests/contexts.
+  - [Rocky.Context.sendToAll](#context_sendtoall) - Static method that sends a response to *all* open requests/contexts.
 - [Middleware](#middleware) - Used to transform and verify data before the main request handler.
   - [Order of Execution](#middleware_orderofexecution) - Explanation of the execution flow for middleware and event handlers.
 - [CORS Requests](#cors_requests) - How to handle cross-site HTTP requests ([CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)).
@@ -575,11 +575,11 @@ The *sent* property is deprecated - developers should move to using the [isCompl
 
 <div id="middleware"><h2>Middleware</h2></div>
 
-Middleware allows you to easily (and scalably) add new functionality to your request handlers. Middleware can be attached at either a global level through [Rocky.use](#rocky_use), or at the route level with [Rocky.Route.use](#route_use). Middlewares are invoked before the main request handler and can aid in debugging, data validation/transformation, and more!
+Middleware allows you to easily (and scalably) add new functionality to your request handlers. Middleware functions can be attached at either a global level through [Rocky.use](#rocky_use), or at the route level with [Rocky.Route.use](#route_use). Middleware functions are invoked before the main request handler and can aid in debugging, data validation/transformation, and more!
 
-Middlewares are invoked with two parameters - a [Rocky.Context](#context) object, and a *next()* method. The *next* method invokes the next middleware / handler in the chain (see [Order of Execution](middleware_orderofexecution)).
+Middleware functions are invoked with two parameters - a [Rocky.Context](#context) object, and a *next()* method. The *next* method invokes the next middleware / handler in the chain (see [Order of Execution](middleware_orderofexecution)).
 
-Responding to a request in a middleware prevents further middlewares and event handlers (such as authorize, onAuthorized, etc) from executing.
+Responding to a request in a middleware prevents further middleware functions and event handlers (such as authorize, onAuthorized, etc) from executing.
 
 In the following example, we create a middleware that logs debug information for all incoming requests:
 
@@ -607,7 +607,7 @@ app.get("/data", function(context) {
 });
 ```
 
-Middlewares can also be uses to extend / override default event handlers. In the following example we create middlewares for checking whether read and write requests are authorized, and another middleware for validating write data:
+Middleware functions can also be used to extend / override default event handlers. In the following example we create middleware functions for checking whether read and write requests are authorized, and another middleware for validating write data:
 
 ```squirrel
 // Middleware to check if incoming request has access to read data
@@ -626,7 +626,7 @@ function writeAuthMiddleware(context, next) {
     local apiKey = context.getHeader("API-KEY");
 
     // send a response will prevent the route handler from executing
-    if (apiKey == null || !(apiKey in writeKeys)) context.send(401, { "error": "UNAUTHORIZED" });
+    if (apiKey == null || !(apiKey in writeKeys)) { context.send(401, { "error": "UNAUTHORIZED" }); }
 
     // invoke the next middleware
     next();
@@ -635,8 +635,8 @@ function writeAuthMiddleware(context, next) {
 // Middleware to validate incoming data
 function validateDataMiddleware(context, next) {
     // If required parameters are missing, send a response (which prevents the route handler from executing)
-    if (!("lowTemp" in context.req.body)) context.send(400, { "error" :"Missing required parameter 'lowTemp'" });
-    if (!("highTemp" in context.req.body)) context.send(400, { "error" :"Missing required parameter 'highTemp'" });
+    if (!("lowTemp" in context.req.body)) { context.send(400, { "error" :"Missing required parameter 'lowTemp'" }); }
+    if (!("highTemp" in context.req.body)) { context.send(400, { "error" :"Missing required parameter 'highTemp'" }); }
 
     // invoke the next middleware
     next();
@@ -700,19 +700,19 @@ When Rocky processes an incoming HTTPS request, the following takes place:
 - Rocky adds the access control headers unless the `accessControl` setting is set to false
 - Rocky rejects non-HTTPS requests unless the `allowUnsecure` setting is not set to true
 - Rocky parsees the body (and send a 400 response if there was an error parsing the data)
-- Invoke the Rocky-level middlewares
-- Invoke the Route-level middlewares
+- Invoke the Rocky-level middleware functions
+- Invoke the Route-level middleware functions
 - Invoke the authorize function, and based on the return on authorize:
   - Invokes the request handler (is authorize returned `true`)
   - Invokes the onUnauthorized handler (is authorize returned `false`)
 
-If any middlewares send a response, no further action will be take on the request.
+If a middleware function send a response, no further action will be taken on the request.
 
 If a runtime errors occurs after the data has been parsed, the onError handler will be invoked.
 
 <div id="cors_requests"><h2>CORS Requests</h2></div>
 
-During an cross domain AJAX request, some browsers will send a [preflight request](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing#Preflight_example) to determin if it has the permissions needed to perform the action.
+During a cross domain AJAX request, some browsers will send a [preflight request](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing#Preflight_example) to determine if it has the permissions needed to perform the action.
 
 To accomodate preflight requests you can add a wildcard OPTIONS handler:
 
