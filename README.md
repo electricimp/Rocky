@@ -226,7 +226,7 @@ device.on("getTempResponse", function(data) {
     local context = Rocky.getContext(data.id);
 
     // then send the response using that context
-    if (!context.send) {
+    if (!context.isComplete()) {
         context.send(200, { temp = data.temp });
     }
 });
@@ -283,7 +283,7 @@ app <- Rocky();
 // Custom Middleware to validate new users
 function validateNewUserMiddleware(context) {
     if (!("username" in context.req.body)) context.send(400, "Required parameter 'username' missing");
-    if ("username" in usernames) context.send(400, "Requested username already exists");
+    if (context.req.body.username in usernames) context.send(400, "Requested username already exists");
 
     if (!("passwordHash" in context.req.body)) context.send(400, "Required parameter 'passwordHash' missing");
 
@@ -352,7 +352,7 @@ app.get("/", function(context) {
 
 device.on("getTempResponse", function(data) {
     local context = Rocky.getContext(data.id);
-    if (!context.isComplete()]) {
+    if (!context.isComplete()) {
         context.send(200, { temp = data.temp });
     }
 });
@@ -466,7 +466,7 @@ app.post("/users", function(context) {
     context.setHeader("location", format("/users/%s", username));
 
     context.send(201);
-});```
+});
 ```
 
 <div id="context_id"><h3>context.id</h3></div>
@@ -517,7 +517,7 @@ The *matches* property is an array that represents the results of the regular ex
 ```squirrel
 app.get("/users/([^/]*)", function(context) {
     // grab the username from the regular expression matches, instead of the path array
-    local username = context.path[1];
+    local username = context.matches[1];
 
     // if the user doesn't exist:
     if (!(username in users)) {
@@ -530,7 +530,7 @@ app.get("/users/([^/]*)", function(context) {
 });
 ```
 
-<div id="context_isbrowser"><h3>context.isBrowser()</h3></div>
+<div id="context_isbrowser"><h3>context.isbrowser()</h3></div>
 
 The *isbrowser* method returns true if an ```Accept: text/html``` header was present.
 
