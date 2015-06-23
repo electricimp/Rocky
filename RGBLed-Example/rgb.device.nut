@@ -29,9 +29,9 @@ function setColor(colors) {
         if (color > 255) colors[i] = 255;
     }
 
-    red = color[0];
-    green = color[1];
-    blue = color[2];
+    red = colors.red;
+    green = colors.green;
+    blue = colors.blue;
 
     update();
 }
@@ -55,8 +55,8 @@ function update() {
     }
 }
 
-agent.on("color", setColor);
-agent.on("state", setState);
+agent.on("setColor", setColor);
+agent.on("setState", setState);
 agent.on("getInfo", sendInfo);
 
 sendInfo();
