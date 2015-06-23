@@ -306,7 +306,7 @@ app.post("/users", function(context) {
 The *authorize* method allows you to specify a route level function to validate or authorize incoming requests. A route level authorize handler will override the global authorize handler set by [Rocky.authorize](#rocky_authorize) for requests made to the specified route. The callback function takes a [Rocky.Context](#context) object as a parameter, and must return either true (if the request is authorized) or false (if the request is not authorized).
 
 The authorize method is executed before the main request handler.
-- If the callback return true, the route handler will be invoked.
+- If the callback returns true, the route handler will be invoked.
 - If the callback returns false, the [onUnauthorized](#rocky_onAuthorized) method is invoked.
 
 ```squirrel
