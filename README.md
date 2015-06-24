@@ -33,7 +33,7 @@ Rocky is an framework for building powerful and scalable APIs for your Electric 
 
 **To add this library to your project, add** `#require "Rocky.class.nut:1.1.1"` **to the top of your agent code**
 
-<div id="rocky"><h2>Rocky(*[options]*)</h2></div>
+<div id="rocky"><h2>Rocky(<i>[options]</i>)</h2></div>
 
 Calling the Rocky constructor creates a new Rocky application. An optional *options* table can be passed into the constructor to override default behaviours:
 
@@ -63,7 +63,7 @@ defaults <- {
 }
 ```
 
-<div id="rocky_verb"><h3>app.**VERB**(*signature, callback*)</h3></div>
+<div id="rocky_verb"><h3>app.<b>VERB</b>(<i>signature, callback</i>)</h3></div>
 The **VERB** methods allow you to assign routes based on the specified verb and signature. The following **VERB**s are allowed:
 
 - app.get(*signature, callback*)
@@ -101,7 +101,7 @@ app.get("/users/([^/]*)", function(context) {
 });
 ```
 
-<div id="rocky_on"><h3>app.on(*verb, signature, callback*)</h3></div>
+<div id="rocky_on"><h3>app.on(<i>verb, signature, callback</i>)</h3></div>
 
 The *on* method allows you to create APIs that use verbs other than GET, PUT, and POST. The *.on* method works identically to the **.VERB** methods, but we specify the verb as a string:
 
@@ -155,7 +155,7 @@ agent.on("getTemp", function(id) {
 });
 ```
 
-<div id="rocky_sendtoall"><h3>app.sendToAll(*statuscode, response, [headers]*)</h3></div>
+<div id="rocky_sendtoall"><h3>app.sendToAll(<i>statuscode, response, [headers]</i>)</h3></div>
 
 The *sendToAll* method sends a response to **all** open requests. This is most useful in APIs that allow for long-polling.
 
@@ -170,7 +170,7 @@ device.on("data", function(data) {
 });
 ```
 
-<div id="rocky_authorize"><h3>app.authorize(callback)</h3></div>
+<div id="rocky_authorize"><h3>app.authorize(<i>callback</i>)</h3></div>
 
 The *authorize* method allows you to specify a global function to validate or authorize incoming requests. The callback function takes a [Rocky.Context](#context) object as a parameter, and must return either true (if the request is authorized) or false (if the request is not authorized).
 
@@ -185,7 +185,7 @@ app.authorize(function(context) {
 });
 ```
 
-<div id="rocky_onunauthorized"><h3>app.onUauthorized(callback)</h3></div>
+<div id="rocky_onunauthorized"><h3>app.onUauthorized(<i>callback</i>)</h3></div>
 
 The *onUnauthorized* method allows you to configure the default response to requests that fail the *authorize* method. The callback method takes a [Rocky.Context](#context) object as a parameter. The callback method passed into *onUnauthorized* will be executed for all unauthorized requests that do not have a route level [onUnauthorized](route_onUnauthorized) response handler.
 
@@ -195,7 +195,7 @@ app.onUnauthorized(function(context) {
 });
 ```
 
-<div id="rocky_ontimeout"><h3>app.onTimeout(callback)</h3></div>
+<div id="rocky_ontimeout"><h3>app.onTimeout(<i>callback</i>)</h3></div>
 
 The *onTimeout* method allows you to configure the default response to requests that exceed the timeout. The callback method passed into *onTimeout* will be executed for all timed out requests that do not have a route level [onTimeout](route_onTimeout) response handler. The callback method takes a [Rocky.Context](#context) object as a parameter. This method should (but is not required to) send a response code of 408.
 
@@ -205,7 +205,7 @@ app.onTimeout(function(context) {
 });
 ```
 
-<div id="rocky_onnotfound"><h3>app.onNotFound(callback)</h3></div>
+<div id="rocky_onnotfound"><h3>app.onNotFound(<i>callback</i>)</h3></div>
 
 The *onNotFound* method allows you to configure the response handler for requests that could not match a route. The callback method takes a [Rocky.Context](#context) object as a parameter. This method should (but is not required to) send a response code of 404.
 
@@ -215,7 +215,7 @@ app.onNotFound(function(context) {
 });
 ```
 
-<div id="rocky_onexception"><h3>app.onException(callback)</h3></div>
+<div id="rocky_onexception"><h3>app.onException(<i>callback</i>)</h3></div>
 
 The *onException* method allows you to configure the global response handler for requests that encounter runtime errors. The callback method takes two parameters, a [Rocky.Context](#context) object, and the exception. The callback method will be excuted for all requests that encounter runtime errors and do not have a route level [onException](route_onexception) handler. This method should (but is not required to) send a response code of 500.
 
@@ -241,7 +241,7 @@ app.get("/", function(context) {
 });
 ```
 
-<div id="route_authorize"><h3>route.authorize(callback)</h3></div>
+<div id="route_authorize"><h3>route.authorize(<i>callback</i>)</h3></div>
 
 The *authorize* method allows you to specify a route level function to validate or authorize incoming requests. A route level authorize handler will override the global authorize handler set by [Rocky.authorize](#rocky_authorize) for requests made to the specified route. The callback function takes a [Rocky.Context](#context) object as a parameter, and must return either true (if the request is authorized) or false (if the request is not authorized).
 
@@ -262,7 +262,7 @@ app.on("delete", "/users/([^/]*)", function(context) {
 });
 ```
 
-<div id="route_onunauthorized"><h3>route.onUauthorized(callback)</h3></div>
+<div id="route_onunauthorized"><h3>route.onUauthorized(<i>callback</i>)</h3></div>
 
 The *onUnauthorized* method allows you to configure a route level response to requests that fail the *authorize* method. A route level onUnauthorized handler will override the global onUnauthorized handler set by [Rocky.onUnauthorized](#rocky_onunauthorized) for requests made to the specified route. The callback method takes a [Rocky.Context](#context) object as a parameter. The callback method passed into *onUnauthorized* will be executed for all unauthorized requests that do not have a route level [onUnauthorized](route_onUnauthorized) response handler.
 
@@ -281,7 +281,7 @@ app.on("delete", "/users/([^/]*)", function(context) {
 });
 ```
 
-<div id="route_ontimeout"><h3>route.onTimeout(callback)</h3></div>
+<div id="route_ontimeout"><h3>route.onTimeout(<i>callback</i>)</h3></div>
 
 The *onTimeout* method allows you to configure a route level response to requests that exceed the timeout. A route level onTimeout handler will override the global onTimeout handler set by [Rocky.onTimeout](#rocky_ontimeout) for requests made to the specified route. The callback method passed into *onTimeout* will be executed for all timed out requests that do not have a route level [onTimeout](route_onTimeout) response handler. The callback method takes a [Rocky.Context](#context) object as a parameter. This method should (but is not required to) send a response code of 408.
 
@@ -300,7 +300,7 @@ device.on("getTempResponse", function(data) {
 });
 ```
 
-<div id="route_onexception"><h3>route.onException(callback)</h3></div>
+<div id="route_onexception"><h3>route.onException(<i>callback</i>)</h3></div>
 
 The *onException* method allows you to configure a route level response handler for requests that encounter runtime errors. A route level onException handler will override the global onException handler set by [Rocky.onTimeout](#rocky_onexception) for requests made to the specified route. The callback method takes two parameters, a [Rocky.Context](#context) object, and the exception. The callback method will be excuted for all requests that encounter runtime errors and do not have a route level [onException](route_onexception) handler. This method should (but is not required to) send a response code of 500.
 
