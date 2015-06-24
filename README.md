@@ -124,7 +124,7 @@ app.on("delete", "/users/([^/]*)", function(context) {
 });
 ```
 
-<div id="rocky_getcontext"><h3>app.getContext(id)</h3></div>
+<div id="rocky_getcontext"><h3>app.getContext(<i>id</i>)</h3></div>
 
 Every [Rocky.Context](#context) object created by Rocky is assigned a unique ID that can found using [context.id](#context_id). We can use this id and the *getContext* method to retreive previously created contexts. This is primarily used for long running or asyncronous requests. In the following example, we fetch the temperature from the device when the request is made:
 
@@ -317,8 +317,7 @@ app.get("/", function(context) {
 
 The Rocky.Context object encapsulates an [HTTP Request Table](http://electricimp.com/docs/api/httphandler/) an [HTTPResponse](http://electricimp.com/docs/api/httpresponse/) object, and other important information. When a request is made, Rocky will automatically generate a new context object for that request and pass it to the required callbacks (i.e. - you should never manuall create a Rocky.Context object).
 
-<div id="context_send"><h3>context.send(*statuscode, [message]*)</h3></div>
-
+<div id="context_send"><h3>context.send(<i>statuscode, [message]</i>)</h3></div>
 
 The *send* method returns a response to a request made to a Rocky application. It takes two parameters. The first is an integer [HTTP status code](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes). The second parameter, which is optional, is the data that will be relayed back to the requester, either a string, an array of values, or a table.
 
@@ -332,7 +331,7 @@ app.get("/color", function(context) {
 })
 ```
 
-<h3>context.send(*message*)</h3>
+<h3>context.send(<i>message</i>)</h3>
 
 The *send* method may also be invoked without a status code - when invoked in this fashion, a status code of 200 is assumed:
 
@@ -342,7 +341,7 @@ app.get("/", function(context) {
 })
 ```
 
-<div id="context_getheader"><h3>context.getHeader</h3></div>
+<div id="context_getheader"><h3>context.getHeader()</h3></div>
 
 The *getHeader* method attempts to retreive a header from the HTTP Request table. If the header is present, the value of that header is returned, if the header is not present ```null``` will be returned.
 
@@ -357,7 +356,7 @@ app.get("/", function(context) {
 });
 ```
 
-<div id="context_setheader"><h3>context.setHeader</h3></div>
+<div id="context_setheader"><h3>context.setHeader()</h3></div>
 
 The *setHeader* method adds the specified header to the HTTPResponse object sent during [context.send](#context_send). In the following example, we create a new user resource, and return the location of that resource with a ```location``` header:
 
