@@ -25,6 +25,7 @@ function sendInfo(nullData = null) {
 
 function setColor(colors) {
     foreach(i, color in colors) {
+        color = color.tointeger();
         if (color < 0) colors[i] = 0;
         if (color > 255) colors[i] = 255;
     }
@@ -37,6 +38,7 @@ function setColor(colors) {
 }
 
 function setState(s) {
+    s = s.tointeger();
     if (s == 0) state = 0;
     else state = 1;
 
