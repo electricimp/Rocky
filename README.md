@@ -154,7 +154,6 @@ app.get("/", function(context) {
 });
 ```
 
-<div id="rocky_sendtoall"><h3>app.sendToAll(<i>statuscode, response, [headers]</i>)</h3></div>
 See the [Middleware](#middleware) section for more information.
 
 <div id="rocky_authorize"><h3>authorize(callback)</h3></div>
