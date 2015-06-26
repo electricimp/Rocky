@@ -58,6 +58,14 @@ function hasReadAccess(context) {
     return checkAccess(user, pass, "read");
 }
 
+// Allow POST, PUT, PATCH, DELETE, GET, OPTIONS methods
+function addMethods(context, next) {
+    context.setHeader("Access-Control-Allow-Methods", "POST, PUT, PATCH, DELETE, GET, OPTIONS");
+    next();
+}
+
+// Use middlewares to add PATCH and DELETE methods to app
+app.use([ addMethods ]);
 
 // Create a new user (no authorize function since anyone can create a user)
 app.post("/users", function(context) {
@@ -88,7 +96,7 @@ app.post("/users", function(context) {
 });
 
 // Delete a user
-app.on("delete", "/users/([^/]*)", function(context) {
+app.on("DELETE", "/users/([^/]*)", function(context) {
     // grab the username from the regex
     local username = context.matches[1];
 
