@@ -2,7 +2,7 @@
 // This file is licensed under the MIT License
 // http://opensource.org/licenses/MIT
 
-#require "Rocky.class.nut:1.0.0"
+#require "Rocky.class.nut:1.2.0"
 
 app <- Rocky();
 
@@ -58,6 +58,14 @@ function hasReadAccess(context) {
     return checkAccess(user, pass, "read");
 }
 
+// Allow POST, PUT, PATCH, DELETE, GET, OPTIONS methods
+function addMethods(context, next) {
+    context.setHeader("Access-Control-Allow-Methods", "POST, PUT, PATCH, DELETE, GET, OPTIONS");
+    next();
+}
+
+// Use middlewares to add PATCH and DELETE methods to app
+app.use([ addMethods ]);
 
 // Create a new user (no authorize function since anyone can create a user)
 app.post("/users", function(context) {
@@ -88,7 +96,7 @@ app.post("/users", function(context) {
 });
 
 // Delete a user
-app.on("delete", "/users/([^/]*)", function(context) {
+app.on("DELETE", "/users/([^/]*)", function(context) {
     // grab the username from the regex
     local username = context.matches[1];
 
@@ -104,7 +112,7 @@ app.on("delete", "/users/([^/]*)", function(context) {
 }).authorize(hasAdminAccess);
 
 // Edit a user's settings
-app.request("PATCH", "/users/([^/]*)", function(context) {
+app.on("PATCH", "/users/([^/]*)", function(context) {
     // grab the username
     local username = context.matches[1];
 
@@ -151,6 +159,7 @@ device.on("info", function(data) {
 app.get("/color", function(context) {
     context.send(200, { color = led.color });
 }).authorize(hasReadAccess);
+
 app.get("/state", function(context) {
     context.send({ state = led.state });
 }).authorize(hasReadAccess);
@@ -164,13 +173,17 @@ app.post("/color", function(context) {
         if (!("blue" in context.req.body.color)) throw "Missing param: color.blue";
 
         // if preflight check passed - do things
-        setColor(context.req.body.color);
-        context.send({ verb = "POST", color = led.color });
+        led.color = context.req.body.color;
+        device.send("setColor", context.req.body.color);
+
+        // send the response
+        context.send({ "verb": "POST", "led": led });
     } catch (ex) {
         context.send(400, ex);
         return;
     }
 }).authorize(hasWriteAccess);
+
 app.post("/state", function(context) {
     try {
         // Preflight check
@@ -181,7 +194,9 @@ app.post("/state", function(context) {
     }
 
     // if preflight check passed - do things
-    setState(context.req.body.state);
-    context.send({ verb = "POST", state = led.state });
-}).authorize(hasWriteAccess);
+    led.state = context.req.body.state;
+    device.send("setState", context.req.body.state);
 
+    // send the response
+    context.send({ "verb": "POST", "led": led });
+}).authorize(hasWriteAccess);

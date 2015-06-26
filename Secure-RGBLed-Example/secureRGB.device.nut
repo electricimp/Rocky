@@ -25,18 +25,20 @@ function sendInfo(nullData = null) {
 
 function setColor(colors) {
     foreach(i, color in colors) {
+        color = color.tointeger();
         if (color < 0) colors[i] = 0;
         if (color > 255) colors[i] = 255;
     }
 
-    red = color[0];
-    green = color[1];
-    blue = color[2];
+    red = colors.red;
+    green = colors.green;
+    blue = colors.blue;
 
     update();
 }
 
 function setState(s) {
+    s = s.tointeger();
     if (s == 0) state = 0;
     else state = 1;
 
@@ -55,9 +57,8 @@ function update() {
     }
 }
 
-agent.on("color", setColor);
-agent.on("state", setState);
+agent.on("setColor", setColor);
+agent.on("setState", setState);
 agent.on("getInfo", sendInfo);
 
 sendInfo();
-

@@ -2,7 +2,7 @@
 // This file is licensed under the MIT License
 // http://opensource.org/licenses/MIT
 
-#require "Rocky.class.nut:1.0.0"
+#require "Rocky.class.nut:1.2.0"
 
 /******************** Application Code ********************/
 led <- {
@@ -31,15 +31,17 @@ app.post("/color", function(context) {
         if (!("blue" in context.req.body.color)) throw "Missing param: color.blue";
 
         // if preflight check passed - do things
+        led.color = context.req.body.color;
         device.send("setColor", context.req.body.color);
 
         // send the response
-        context.send({ verb = "POST", color = led.color });
+        context.send({ "verb": "POST", "led": led });
     } catch (ex) {
         context.send(400, ex);
         return;
     }
 });
+
 app.post("/state", function(context) {
     try {
         // Preflight check
@@ -50,8 +52,9 @@ app.post("/state", function(context) {
     }
 
     // if preflight check passed - do things
+    led.state = context.req.body.state;
     device.send("setState", context.req.body.state);
 
     // send the response
-    context.send({ verb = "POST", state = led.state });
+    context.send({ "verb": "POST", "led": led });
 });
