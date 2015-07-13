@@ -281,7 +281,7 @@ The *use* method allows you to attach a middleware, or array of middleware to a 
 app <- Rocky();
 
 // Custom Middleware to validate new users
-function validateNewUserMiddleware(context) {
+function validateNewUserMiddleware(context, next) {
     // Make sure they supplied a username nas password
     if (!("username" in context.req.body)) context.send(400, "Required parameter 'username' missing");
     if (!("passwordHash" in context.req.body)) context.send(400, "Required parameter 'passwordHash' missing");
