@@ -4,7 +4,7 @@
 
 class Rocky {
 
-    static version = [1,2,0];
+    static version = [1,2,1];
 
     static PARSE_ERROR = "Error parsing body of request";
     static INVALID_MIDDLEWARE_ERR = "Middleware must be a function, or array of functions";
@@ -142,6 +142,7 @@ class Rocky {
 
         // Parse the request body back into the body
         try {
+            req.rawbody <- req.body;
             req.body = _parse_body(req);
         } catch (err) {
             context.send(400, Rocky.PARSE_ERROR);
