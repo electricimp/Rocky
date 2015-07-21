@@ -1,4 +1,4 @@
-# Rocky Framework
+# Rocky 1.2.1
 
 Rocky is an framework for building powerful and scalable APIs for your Electric Imp powered devices. The Rocky library consists of the following classes:
 
@@ -470,6 +470,8 @@ app.post("/users", function(context) {
     context.send(201);
 });
 ```
+
+**NOTE:** If the application requires access to the raw and *unparsed* body of the request, it can be accessed with `context.req.rawbody`.
 
 <div id="context_id"><h3>context.id</h3></div>
 
