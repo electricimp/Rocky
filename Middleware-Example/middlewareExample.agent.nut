@@ -1,4 +1,4 @@
-#require "rocky.class.nut:1.2.0"
+#require "rocky.class.nut:1.2.2"
 
 // Dummy Data for API
 data <- { "foo": "bar" };
