@@ -4,7 +4,7 @@
 
 class Rocky {
 
-    static version = [1,2,1];
+    static version = [1,2,2];
 
     static PARSE_ERROR = "Error parsing body of request";
     static INVALID_MIDDLEWARE_ERR = "Middleware must be a function, or array of functions";
@@ -49,6 +49,8 @@ class Rocky {
     }
 
     //-------------------- PUBLIC METHODS --------------------//
+
+    // Requests
     function on(verb, signature, callback) {
         // Register this signature and verb against the callback
         verb = verb.toupper();
@@ -76,6 +78,7 @@ class Rocky {
         return on("PUT", signature, callback);
     }
 
+    // Authorization
     function authorize(callback) {
         _handlers.authorize <- callback;
         return this;
@@ -86,6 +89,7 @@ class Rocky {
         return this;
     }
 
+    // Events
     function onTimeout(callback, t = null) {
         if (t == null) t = _timeout;
 
@@ -104,6 +108,7 @@ class Rocky {
         return this;
     }
 
+    // Middlewares
     function use(middlewares) {
         if(typeof middlewares == "function") {
             _handlers.middlewares.push(middlewares);
@@ -179,17 +184,16 @@ class Rocky {
     function _parse_body(req) {
         local contentType = "content-type" in req.headers ? req.headers["content-type"] : "";
 
-        if (contentType == "application/json") {
+        if (contentType == "application/json" || contentType.find("application/json;") != null) {
             if (req.body == "" || req.body == null) return null;
             return http.jsondecode(req.body);
         }
 
-        if (contentType == "application/x-www-form-urlencoded") {
+        if (contentType == "application/x-www-form-urlencoded" || contentType.find("application/x-www-form-urlencoded;") != null) {
             if (req.body == "" || req.body == null) return null;
             return http.urldecode(req.body);
         }
 
-        // .find instead of slice to ensure this doesn't fail..
         if (contentType.find("multipart/form-data;") == 0) {
             local parts = [];
 
@@ -490,7 +494,6 @@ class Rocky.Route {
 
         return this;
     }
-
 }
 
 class Rocky.Context {
@@ -612,5 +615,4 @@ class Rocky.Context {
     function isComplete() {
         return sent;
     }
-
 }
