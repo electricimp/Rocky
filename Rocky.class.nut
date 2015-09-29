@@ -381,7 +381,7 @@ class Rocky.Route {
                 // Copy the handlers over so we can iterate through in
                 // the correct order:
                 for (local i = handler.len() -1; i >= 0; i--) {
-                    // Only add handlers that we haven't already addd
+                    // Only add handlers that we haven't already added
                     if (_handlers.middlewares.find(handler[i]) == null) {
                         _handlers.middlewares.insert(0, handler[i]);
                     }
