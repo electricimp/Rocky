@@ -1,4 +1,4 @@
-# Rocky 1.2.2
+# Rocky 1.2.3
 
 Rocky is an framework for building powerful and scalable APIs for your Electric Imp powered devices. The Rocky library consists of the following classes:
 
@@ -42,7 +42,7 @@ Rocky is an framework for building powerful and scalable APIs for your Electric 
 Calling the Rocky constructor creates a new Rocky application. An optional *options* table can be passed into the constructor to override default behaviours:
 
 ```squirrel
-#require "rocky.class.nut:1.2.2"
+#require "rocky.class.nut:1.2.3"
 
 app <- Rocky()
 ```
