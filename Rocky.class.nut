@@ -381,15 +381,10 @@ class Rocky.Route {
                 // Copy the handlers over so we can iterate through in
                 // the correct order:
                 for (local i = handler.len() -1; i >= 0; i--) {
-
-                    // Check if the handler has already been added
-                    local exists = false;
-                    foreach(middleware in _handlers.middlewares) {
-                        if (handler[i] == middleware) exists = true;
+                    // Only add handlers that we haven't already addd
+                    if (_handlers.middlewares.find(handler[i]) == null) {
+                        _handlers.middlewares.insert(0, handler[i]);
                     }
-
-                    // If we've already added this middleware handler, skip it
-                    if (!exists) _handlers.middlewares.insert(0, handler[i]);
                 }
             }
         }
