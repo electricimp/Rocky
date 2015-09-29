@@ -4,7 +4,7 @@
 
 class Rocky {
 
-    static version = [1,2,2];
+    static version = [1,2,3];
 
     static PARSE_ERROR = "Error parsing body of request";
     static INVALID_MIDDLEWARE_ERR = "Middleware must be a function, or array of functions";
@@ -381,7 +381,15 @@ class Rocky.Route {
                 // Copy the handlers over so we can iterate through in
                 // the correct order:
                 for (local i = handler.len() -1; i >= 0; i--) {
-                    _handlers.middlewares.insert(0, handler[i]);
+
+                    // Check if the handler has already been added
+                    local exists = false;
+                    foreach(middleware in _handlers.middlewares) {
+                        if (handler[i] == middleware) exists = true;
+                    }
+
+                    // If we've already added this middleware handler, skip it
+                    if (!exists) _handlers.middlewares.insert(0, handler[i]);
                 }
             }
         }
