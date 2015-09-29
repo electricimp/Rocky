@@ -2,7 +2,7 @@
 // This file is licensed under the MIT License
 // http://opensource.org/licenses/MIT
 
-#require "Rocky.class.nut:1.2.2"
+#require "Rocky.class.nut:1.2.3"
 
 app <- Rocky();
 
