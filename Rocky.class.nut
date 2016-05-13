@@ -51,7 +51,10 @@ class Rocky {
     //-------------------- PUBLIC METHODS --------------------//
 
     // Requests
-    function on(verb, signature, callback) {
+    function on(verb, signature, callback, timeout=null) {
+        //Check timeout and set it to class-level timeout if not specified for route
+        if (timeout == null) timeout = this._timeout;
+
         // Register this signature and verb against the callback
         verb = verb.toupper();
 
@@ -59,23 +62,23 @@ class Rocky {
         if (!(signature in _handlers)) _handlers[signature] <- {};
 
         local routeHandler = Rocky.Route(callback);
-        routeHandler.setTimeout(_timeout);
+        routeHandler.setTimeout(timeout);
 
         _handlers[signature][verb] <- routeHandler;
 
         return routeHandler;
     }
 
-    function post(signature, callback) {
-        return on("POST", signature, callback);
+    function post(signature, callback, timeout=null) {
+        return on("POST", signature, callback, timeout);
     }
 
-    function get(signature, callback) {
-        return on("GET", signature, callback);
+    function get(signature, callback, timeout=null) {
+        return on("GET", signature, callback, timeout);
     }
 
-    function put(signature, callback) {
-        return on("PUT", signature, callback);
+    function put(signature, callback, timeout=null) {
+        return on("PUT", signature, callback, timeout);
     }
 
     // Authorization
@@ -166,11 +169,10 @@ class Rocky {
 
             // Create timeout
             local onTimeout = _handlers.onTimeout;
-            local timeout = _timeout;
+            local timeout = route.handler.getTimeout();
 
             if (route.handler.hasHandler("onTimeout")) {
                 onTimeout = route.handler.getHandler("onTimeout");
-                timeout = route.handler.getTimeout();
             }
 
             context.setTimeout(timeout, onTimeout);
