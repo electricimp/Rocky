@@ -4,7 +4,7 @@
 
 class Rocky {
 
-    static version = [1,3,3];
+    static version = [1,3,0];
 
     static PARSE_ERROR = "Error parsing body of request";
     static INVALID_MIDDLEWARE_ERR = "Middleware must be a function, or array of functions";
