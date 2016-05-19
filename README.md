@@ -1,4 +1,4 @@
-# Rocky 1.2.3
+# Rocky 1.3.0
 
 Rocky is an framework for building powerful and scalable APIs for your Electric Imp powered devices. The Rocky library consists of the following classes:
 
@@ -42,7 +42,7 @@ Rocky is an framework for building powerful and scalable APIs for your Electric 
 Calling the Rocky constructor creates a new Rocky application. An optional *options* table can be passed into the constructor to override default behaviours:
 
 ```squirrel
-#require "rocky.class.nut:1.2.3"
+#require "rocky.class.nut:1.3.0"
 
 app <- Rocky()
 ```
@@ -67,14 +67,14 @@ defaults <- {
 }
 ```
 
-<div id="rocky_verb"><h3><em>VERB</em>(signature, callback)</h3></div>
+<div id="rocky_verb"><h3><em>VERB</em>(signature, callback[, timeout])</h3></div>
 The **VERB** methods allow you to assign routes based on the specified verb and signature. The following **VERB**s are allowed:
 
-- app.get(*signature, callback*)
-- app.put(*signature, callback*)
-- app.post(*signature, callback*)
+- app.get(*signature, callback[, timeout]*)
+- app.put(*signature, callback[, timeout]*)
+- app.post(*signature, callback[, timeout]*)
 
-When a match is found on the verb (as specified by the method) and the *signature*, the callback function will be executed. The callback takes a [Rocky.Context](#context) object as a parameter.
+When a match is found on the verb (as specified by the method) and the *signature*, the callback function will be executed. The callback takes a [Rocky.Context](#context) object as a parameter.  An optional route-level timeout can be passed in.  If no timeout is passed in the timeout set in the cunstructor will be used.
 
 ```squirrel
 // responds with ```200, { "message": "hello world "}```
@@ -105,7 +105,7 @@ app.get("/users/([^/]*)", function(context) {
 });
 ```
 
-<div id="rocky_on"><h3>on(verb, signature, callback)</h3></div>
+<div id="rocky_on"><h3>on(verb, signature, callback[, timeout])</h3></div>
 
 The *on* method allows you to create APIs that use verbs other than GET, PUT, and POST. The *.on* method works identically to the **.VERB** methods, but we specify the verb as a string:
 
