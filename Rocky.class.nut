@@ -352,6 +352,7 @@ class Rocky {
     }
 
     function _defaultExceptionHandler(context, ex) {
+        server.error(ex);
         context.send(500, "Agent Error: " + ex);
     }
 
