@@ -1,4 +1,4 @@
-# Rocky 1.3.0
+# Rocky 2.0.0
 
 Rocky is an framework for building powerful and scalable APIs for your Electric Imp powered devices. The Rocky library consists of the following classes:
 
