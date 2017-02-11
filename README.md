@@ -1,4 +1,4 @@
-# Rocky 1.3.0
+# Rocky 2.0.0
 
 Rocky is an framework for building powerful and scalable APIs for your Electric Imp powered devices. The Rocky library consists of the following classes:
 
@@ -471,7 +471,35 @@ app.post("/users", function(context) {
 });
 ```
 
-**NOTE:** If the application requires access to the raw and *unparsed* body of the request, it can be accessed with `context.req.rawbody`.
+To see the difference between `context.req.body` and `context.req.rawbody` take a look at following samples. First at code to send post request:
+
+```squirrel
+//Note that application/x-www-form-urlencoded content-type is added to headers by default
+local req = http.post( (http.agenturl() + "/data"), {}, "hello world" )
+    req.sendasync(function(res) {
+    server.log(res.statuscode);
+})
+```
+A way to get parsed request body as a table:
+
+```squirrel
+
+app.post("/data", function(context) {
+    //In this case table identifier will be printed in the server log
+    server.log(context.req.body);
+    context.send(200);
+});
+```
+And a way to get unparsed request body as a string:
+
+```squirrel
+
+app.post("/data", function(context) {
+    //In this case string "hello world" will be printed in the server log
+    server.log(context.req.rawbody);
+    context.send(200);
+});
+```
 
 <div id="context_id"><h3>context.id</h3></div>
 
