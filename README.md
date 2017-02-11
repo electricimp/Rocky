@@ -471,7 +471,12 @@ app.post("/users", function(context) {
 });
 ```
 
-To see the difference between `context.req.body` and `context.req.rawbody` take a look at following samples. First at code to send post request:
+**NOTE:** If the application requires access to the raw and *unparsed* body of the request, it can be accessed with `context.req.rawbody`.
+
+**NOTE:** If you do *http.post* call without any HTTP headers explicitly specified, you may end up receiving a request
+with *application/x-www-form-urlencoded* content type.
+
+To see the difference between `context.req.body` and `context.req.rawbody` please take a look at following samples. First at code to send post request:
 
 ```squirrel
 //Note that application/x-www-form-urlencoded content-type is added to headers by default
