@@ -381,10 +381,10 @@ app.get("/", function(context) {
 
 The Rocky.Context object encapsulates an [HTTP Request Table](http://electricimp.com/docs/api/httphandler/) an [HTTPResponse](http://electricimp.com/docs/api/httpresponse/) object, and other important information. When a request is made, Rocky will automatically generate a new context object for that request and pass it to the required callbacks, ie. you should never manually create a Rocky.Context object.
 
-<div id="context_send"><h3>send(*statuscode, [message]*)</h3></div>
+<div id="context_send"><h3>send(*statuscode[, message]*)</h3></div>
 
 
-The *send()* method returns a response to a request made to a Rocky application. It takes two parameters. The first is an integer [HTTP status code](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes). The second parameter, which is optional, is the data that will be relayed back to the requester, either a string, an array of values, or a table.
+The *send()* method returns a response to a request made to a Rocky application. It takes two parameters. The first is an integer [HTTP status code](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes). The second parameter, which is optional, is the data that will be relayed back to the requester, either a string, an array of values or a table.
 
 **Note** Arrays and tables are automatically JSON-encoded before being sent.
 
@@ -396,7 +396,7 @@ app.get("/color", function(context) {
 })
 ```
 
-<h3>send(message)</h3>
+<h3>send(*message*)</h3>
 
 The *send()* method may also be invoked without a status code. When invoked in this fashion, a status code of 200 is assumed:
 
@@ -408,9 +408,9 @@ app.get("/", function(context) {
 
 <div id="context_iscomplete"><h3>isComplete()</h3></div>
 
-The *isComplete()* method returns whether or not a response has been sent for the current context. Rocky keeps track of whether or not a response has been sent, and middlewares and route handlers don't execute if the context has already sent a response. This method should primairly be used for developers extending Rocky.
+The *isComplete()* method returns whether or not a response has been sent for the current context. Rocky keeps track of whether or not a response has been sent, and middlewares and route handlers don’t execute if the context has already sent a response. This method should primairly be used for developers extending Rocky.
 
-<div id="context_getheader"><h3>getHeader(headerName)</h3></div>
+<div id="context_getheader"><h3>getHeader(*headerName*)</h3></div>
 
 The *getHeader()* method attempts to retreive a header from the HTTP Request table. If the header is present, the value of that header is returned, if the header is not present `null` will be returned.
 
@@ -425,7 +425,7 @@ app.get("/", function(context) {
 });
 ```
 
-<div id="context_setheader"><h3>setHeader(headerName, data)</h3></div>
+<div id="context_setheader"><h3>setHeader(*headerName, data*)</h3></div>
 
 The *setHeader()* method adds the specified header to the HTTPResponse object sent during [context.send](#context_send). In the following example, we create a new user resource and return the location of that resource with a `location` header:
 
@@ -517,7 +517,7 @@ The *id* property is a unique ID that identifies the context. This is primairly 
 
 <div id="context_userdata"><h3>context.userdata</h3></div>
 
-The *userdata* property can be used by the developer to store any information relevant to the current context. This is primairly used during long-running tasks and asynchronous requests.
+The *userdata* property can be used by the developer to store any information relevant to the current context. This is primarily used during long-running tasks and asynchronous requests.
 
 ```squirrel
 app.get("/temp", function(context) {
@@ -576,6 +576,8 @@ app.get("/users/([^/]*)", function(context) {
 
 The *isbrowser()* method returns true if an `Accept: text/html` header was present.
 
+**Note** The *isbrowser()* method is all lowercase (as opposed to lowerCamelCase).
+
 ```squirrel
 const INDEX_HTML = @"
 <html>
@@ -605,25 +607,23 @@ app.get("/index.html", function(context) {
 });
 ```
 
-**Note** The *isbrowser()* method is all lowercase (as opposed to lowerCamelCase).
-
 <div id="context_sendtoall"><h3>Rocky.Context.sendToAll(*statuscode, response[, headers]*)</h3></div>
 
 The static *sendToAll()* method sends a response to **all** open requests. The prefered way of invoking this method is through [*Rocky.sendToAll()*](#rocky_sendtoall).
 
 <div id="context_sent"><h3>context.sent</h3></div>
 
-The *sent* property is **deprecated**. developers should move to using the [*isComplete()*](#context_iscomplete) method instead.
+The *sent* property is **deprecated**. Developers should move to using the [*isComplete()*](#context_iscomplete) method instead.
 
 <div id="middleware"><h2>Middleware</h2></div>
 
-Middleware allows you to easily (and scalably) add new functionality to your request handlers. Middleware functions can be attached at either a global level through [Rocky.use](#rocky_use), or at the route level with [Rocky.Route.use](#route_use). Middleware functions are invoked before the main request handler and can aid in debugging, data validation/transformation, and more!
+Middleware allows you to easily (and scalably) add new functionality to your request handlers. Middleware functions can be attached at either a global level through [*Rocky.use()*](#rocky_use), or at the route level with [*Rocky.Route.use()*](#route_use). Middleware functions are invoked before the main request handler and can aid in debugging, data validation/transformation and more.
 
-Middleware functions are invoked with two parameters - a [Rocky.Context](#context) object, and a *next()* method. The *next* method invokes the next middleware / handler in the chain (see [Order of Execution](middleware_orderofexecution)).
+Middleware functions are invoked with two parameters: a [Rocky.Context](#context) object and a *next* function. The *next* function invokes the next middleware/handler in the chain (see [Order of Execution](middleware_orderofexecution)).
 
 Responding to a request in a middleware prevents further middleware functions and event handlers (such as authorize, onAuthorized, etc) from executing.
 
-In the following example, we create a middleware that logs debug information for all incoming requests:
+In the following example, we create a middleware, *debuggingMiddleware()* that logs debug information for all incoming requests:
 
 ```squirrel
 // Middleware to add some debugging information:
@@ -633,7 +633,7 @@ function debuggingMiddleware(context, next) {
     server.log("   PATH: " + context.req.path.tolower());
     server.log("   TIME: " + time());
 
-    // invoke the next middleware
+    // Invoke the next middleware
     next();
 }
 
@@ -649,17 +649,17 @@ app.get("/data", function(context) {
 });
 ```
 
-Middleware functions can also be used to extend / override default event handlers. In the following example we create middleware functions for checking whether read and write requests are authorized, and another middleware for validating write data:
+Middleware functions can also be used to extend or override default event handlers. In the following example we create middleware functions for checking whether read and write requests are authorized, and another middleware for validating write data:
 
 ```squirrel
 // Middleware to check if incoming request has access to read data
 function readAuthMiddleware(context, next) {
     local apiKey = context.getHeader("API-KEY");
 
-    // send a response will prevent the route handler from executing
+    // Send a response will prevent the route handler from executing
     if (apiKey == null || !(apiKey in readKeys)) { context.send(401, { "error": "UNAUTHORIZED" }); }
 
-    // invoke the next middleware
+    // Invoke the next middleware
     next();
 }
 
@@ -667,10 +667,10 @@ function readAuthMiddleware(context, next) {
 function writeAuthMiddleware(context, next) {
     local apiKey = context.getHeader("API-KEY");
 
-    // send a response will prevent the route handler from executing
+    // Send a response will prevent the route handler from executing
     if (apiKey == null || !(apiKey in writeKeys)) { context.send(401, { "error": "UNAUTHORIZED" }); }
 
-    // invoke the next middleware
+    // Invoke the next middleware
     next();
 }
 
@@ -680,7 +680,7 @@ function validateDataMiddleware(context, next) {
     if (!("lowTemp" in context.req.body)) { context.send(400, { "error" :"Missing required parameter 'lowTemp'" }); }
     if (!("highTemp" in context.req.body)) { context.send(400, { "error" :"Missing required parameter 'highTemp'" }); }
 
-    // invoke the next middleware
+    // Invoke the next middleware
     next();
 }
 
@@ -693,17 +693,17 @@ app.get("/data", function(context) {
 }).use([ readAuthMiddleware ]);
 
 // Requests to POST /data will execute writeAuthMiddleware,
-// then validateDataMiddleware,  then the route handler if both
+// then validateDataMiddleware, then the route handler if both
 // middlewares didn't respond
 app.post("/data", function(context) {
-    // By the time we get here, we know we're authotized and have the
+    // By the time we get here, we know we're authorized and have the
     // data we're expecting!
 
     // Send the data down to the device
     device.send("data", context.req.body);
 
     context.send({ "message": "Success!" });
-}).use([ writeAuthMiddleware, validateDataMiddleware ]);
+}).use([writeAuthMiddleware, validateDataMiddleware]);
 ```
 
 The *next* method allows you to complete asynchronous operations before moving on to the next middleware or handler. In the following example, we lookup a userId from a remote service before moving on:
@@ -739,18 +739,18 @@ app.get("/user", function(context) {
 
 When Rocky processes an incoming HTTPS request, the following takes place:
 
-- Rocky adds the access control headers unless the `accessControl` setting is set to false
-- Rocky rejects non-HTTPS requests unless the `allowUnsecure` setting is not set to true
+- Rocky adds the access control headers unless the `accessControl` setting is set to `false`
+- Rocky rejects non-HTTPS requests unless the `allowUnsecure` setting is not set to `true`
 - Rocky parsees the body (and send a 400 response if there was an error parsing the data)
 - Invoke the Rocky-level middleware functions
 - Invoke the Route-level middleware functions
 - Invoke the authorize function, and based on the return on authorize:
-  - Invokes the request handler (is authorize returned `true`)
-  - Invokes the onUnauthorized handler (is authorize returned `false`)
+  - Invokes the request handler (*isAuthorized* returned `true`)
+  - Invokes the onUnauthorized handler (*isAuthorized* returned `false`)
 
 If a middleware function send a response, no further action will be taken on the request.
 
-If a runtime errors occurs after the data has been parsed, the onError handler will be invoked.
+If a runtime errors occurs after the data has been parsed, the *onError* handler will be invoked.
 
 <div id="cors_requests"><h2>CORS Requests</h2></div>
 
