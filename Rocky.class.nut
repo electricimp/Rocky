@@ -4,7 +4,7 @@
 
 class Rocky {
 
-    static version = [1,3,0];
+    static VERSION = "2.0.0";
 
     static PARSE_ERROR = "Error parsing body of request";
     static INVALID_MIDDLEWARE_ERR = "Middleware must be a function, or array of functions";
@@ -352,6 +352,7 @@ class Rocky {
     }
 
     function _defaultExceptionHandler(context, ex) {
+        server.error(ex);
         context.send(500, "Agent Error: " + ex);
     }
 
