@@ -33,29 +33,22 @@ class CoreRockyMethod extends ImpTestCase {
 
     @include __PATH__+"/Core.nut"
     @include __PATH__+"/CoreHandlers.nut"
-
-    verb = null;
-    values = null;
-    
+  
     function setUp() {
-        this.values = [null, true, 0, -1, 1, 13.37, "String", [1, 2], {"counter": "this"}, blob(64), function(){}];
-        if (this.verb == null) {
-            this.verb = getVerb();
-        }
-        this.info("Test for VERB: " + this.verb);
+        this.info("Test for VERB: " + getVerb());
     }
 
     function testSimple() {
         return createTest({
             "signature": "/testSimple", 
-            "method": this.verb
+            "method": getVerb()
         });
     }
 
     function testSimpleStrict() {
         return createTest({
             "signature": "/testSimple", 
-            "method": this.verb,
+            "method": getVerb(),
             "methodStrictUsage": true
         });
     }
@@ -63,7 +56,7 @@ class CoreRockyMethod extends ImpTestCase {
     function testFull() {
         return createTest({
             "signature": "/testFull", 
-            "method": this.verb,
+            "method": getVerb(),
             "headers": {
                 "testFull": "testFull", 
                 "GenericVerbCompatibilityTest": true
@@ -75,14 +68,14 @@ class CoreRockyMethod extends ImpTestCase {
     function testSimpleWOSignature() {
         return createTest({
             "signature": "/", 
-            "method": this.verb
+            "method": getVerb()
         });
     }
 
     function testWOSignatureFull() {
         return createTest({
             "signature": "/", 
-            "method": this.verb,
+            "method": getVerb(),
             "headers": {
                 "testWOSignatureFull": 35, 
                 "GenericVerbCompatibilityTest": false
@@ -94,7 +87,7 @@ class CoreRockyMethod extends ImpTestCase {
     function testTimeout() {
         return createTest({
             "signature": "/testTimeout", 
-            "method": this.verb,
+            "method": getVerb(),
             "headers": {
                 "testTimeout": 35, 
                 "GenericVerbCompatibilityTest": "testTimeout"
@@ -108,7 +101,7 @@ class CoreRockyMethod extends ImpTestCase {
         return createTest({
             "signature": ".*", 
             "signatureOverride": "/testSimpleRegexp_1",
-            "method": this.verb
+            "method": getVerb()
         });
     }
 
@@ -116,7 +109,7 @@ class CoreRockyMethod extends ImpTestCase {
         return createTest({
             "signature": "/test1(.*/test\\d.*)", 
             "signatureOverride": "/test1/test2/test3",
-            "method": this.verb,
+            "method": getVerb(),
             "callback": function(context) {
                 try {
                     if (context.matches.len() != 2) {
@@ -134,26 +127,32 @@ class CoreRockyMethod extends ImpTestCase {
     }
 
     function testContentTypeJson() {
-        return contentType("application/json");
+        return contentType({
+            "contentType": "contentType", 
+            "content-type": "application/json"
+        }, "application/json", http.jsonencode({"contentType": "body"}));
     }
 
     function testContentTypeForm() {
-        return contentType("application/x-www-form-urlencoded");
+        return contentType({
+            "contentType": "contentType", 
+            "content-type": "application/x-www-form-urlencoded"
+        }, "application/x-www-form-urlencoded", "contentType=body");
     }
 
     function testContentTypeMultipart() {
-        return contentType("multipart/form-data");
+        local body = "--ff4ed67396bc8e1d6dbf19d65b6c6348\r\nContent-Disposition: form-data; name=\"contentType\"\r\n\r\nbody\r\n--ff4ed67396bc8e1d6dbf19d65b6c6348\r\nContent-Disposition: form-data; name=\"tmp\"\r\n\r\nContent file\r\n--ff4ed67396bc8e1d6dbf19d65b6c6348";
+        return contentType({
+            "contentType": "contentType", 
+            "content-type": "multipart/form-data; boundary=--ff4ed67396bc8e1d6dbf19d65b6c6348",
+            "Content-Length": body.len()
+        }, "multipart/form-data; boundary=--ff4ed67396bc8e1d6dbf19d65b6c6348", body);
     }
 
-    function contentType(contentType) {
-        local headers = {
-            "contentType": "contentType", 
-            "content-type": contentType
-        };
-        local body = http.jsonencode({"contentType": "body"});
+    function contentType(headers, contentType, body) {
         return createTest({
             "signature": "/contentType", 
-            "method": this.verb,
+            "method": getVerb(),
             "headers": headers,
             "body": body,
             "callback": function(context) {
@@ -186,63 +185,11 @@ class CoreRockyMethod extends ImpTestCase {
         });
     }
 
-    function testInvalidParamsMethod() {
-        local tests = [];
-        local values = this.values;
-        values.insert(0, "#" + this.verb);
-        foreach (element in values) {
-            tests.push({
-                "signature": "/testInvalidParamsMethod", 
-                "method": element,
-                "onExceptionApp": onException.bindenv(this)
-            });
-        }
-        return createTestAll(tests);
-    }
-
-    function testInvalidParamsSignature() {
-        local tests = [];
-        foreach (element in this.values) {
-            tests.push({
-                "signature": element, 
-                "method": this.verb,
-                "onExceptionApp": onException.bindenv(this)
-            });
-        }
-        return createTestAll(tests);
-    }
-
-    function testInvalidParamsCallback() {
-        local tests = [];
-        foreach (element in this.values) {
-            tests.push({
-                "signature": "/testInvalidParamsCallback",
-                "method": this.verb,
-                "cb": element,
-                "onExceptionApp": onException.bindenv(this)
-            });
-        }
-        return createTestAll(tests);
-    }
-
-    function testInvalidParamsTimeout() {
-        local tests = [];
-        foreach (element in this.values) {
-            tests.push({
-                "signature": "/testInvalidParamsTimeout",
-                "method": this.verb,
-                "timeoutRoute": element,
-                "onExceptionApp": onException.bindenv(this)
-            });
-        }
-        return createTestAll(tests);
-    }
-
     function testQuery() {
         return createTest({
             "signature": "/testQuery", 
             "signatureOverride": "/testQuery?first=1&second=2", 
-            "method": this.verb,
+            "method": getVerb(),
             "callback": function(context) {
                 try {
                     if (!("first" in context.req.query && context.req.query["first"] == "1")) {
