@@ -23,7 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 function getVerb() {
-    return "OPTIONS";
+    return "PUT";
 }
 
-@include __PATH__+"/../GenericVerbCompatibilityTest.nut"
+@include __PATH__+"/../CoreRockyMethod.nut"

@@ -38,7 +38,7 @@ class RockyHandlers extends ImpTestCase {
 
     function setUp() {
         this.auth = "Basic 123456789qwerty";
-    	this.authWrong = "Basic wrong";
+        this.authWrong = "Basic wrong";
     }
 
     function testAuthorizationSuccess() {

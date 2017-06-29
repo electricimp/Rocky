@@ -24,7 +24,24 @@
 // "Promise" symbol is injected dependency from ImpUnit_Promise module,
 // while class being tested can be accessed from global scope as "::Promise".
 
-function createTest(params) {
+// createTest
+// Create Promise for testing Rocky.
+// All customization is carried out through a single parameter - table. Table's params described below.
+// Scenario of the method:
+// 1) Apply default values to 'params' if undefined
+// 2) Create Rocky instance
+// 3) Set Rocky's handlers from 'params' if defined (Rocky.authorize, Rocky.onUnauthorized, Rocky.onTimeout, Rocky.onNotFound, Rocky.onException)
+// 4) Set Rocky's middlewares from 'params' if defined (Rocky.use)
+// 5) Create handler for incoming requests (Rocky.Route)
+// 6) Set Rocky.Route's handlers from 'params' if defined (Rocky.Route.authorize, Rocky.Route.onUnauthorized, Rocky.Route.onTimeout, Rocky.Route.onException)
+// 7) Set Rocky.Route's middlewares from 'params' if defined (Rocky.Route.use)
+// 8) Send one (or more) request(s) and wait for Rocky's response.
+//    When get response, verify statuscode and call callback function for additional verify (if defined). If everything ok, then test passed, otherwise failed.
+//    If more than one requests send, then test will be passed only when all responses verifications passed.
+// 
+// @param {table} params
+// @return {Promise}
+function createTest(params = {}) {
     return Promise(function(resolve, reject) {
         local app;
         local route;
@@ -35,25 +52,85 @@ function createTest(params) {
                     params[key] <- value;
                 }
             }.bindenv(this);
-            setDefaultValue("paramsApp", {});
-            setDefaultValue("mw", []);
-            setDefaultValue("mwArray", []);
-            setDefaultValue("mwApp", []);
-            setDefaultValue("mwAppArray", []);
+            // -------------------------------
+            // -- Description of parameters --
+            // -------------------------------
+            // paramsRocky {table}
+            // Options for Rocky constructor
+            setDefaultValue("paramsRocky", {});
+            // paramsRockyRoute {table}
+            // Options for calling Rocky.Route constructor directly
+            setDefaultValue("paramsRockyRoute", null);
+            // paramsRockyContext {table}
+            // Options for calling Rocky.Context constructor directly
+            setDefaultValue("paramsRockyContext", null);
+            // paramsRockyContextAdditionalUsage {boolean}
+            // Use for calling Rocky.Context constructor directly. If true, then all Rocky.Context methods will be called.
+            setDefaultValue("paramsRockyContextAdditionalUsage", false);
+            // method {string}
+            // Method to send and receive requests
             setDefaultValue("method", "GET");
+            // methodStrictUsage {boolean}
+            // If true, get post put methods will execute with Rocky.on function directly.
+            setDefaultValue("methodStrictUsage", false);
+            // signature {string}
+            // Signature to receive requests
             setDefaultValue("signature", "/test");
+            // signatureOverride {string}
+            // Signature to send requests
             setDefaultValue("signatureOverride", null);
-            setDefaultValue("statuscode", 200);
+            // headers {table}
+            // Headers to send requests
             setDefaultValue("headers", {});
+            // body {string}
+            // Body to send requests
             setDefaultValue("body", "");
+            // timeout {boolean}
+            // If true, server will not respond to received requests
             setDefaultValue("timeout", false);
+            // timeoutRoute {int}
+            // If defined, set timeout param at Rocky.on|Rocky.VERB
+            setDefaultValue("timeoutRoute", null);
+            // statuscode {*}
+            // Expected statuscode of server's response. If real statuscode will be different, then test will be failed.
+            setDefaultValue("statuscode", 200);
+            // cb {function}
+            // Callback, that will be called, when server will receive new request. This callback (if specified) will be passed directly into Rocky.on method.
+            setDefaultValue("cb", null);
+            // callback {function}
+            // Callback, that will be called, when server will receive new request. 
+            // If not specified, then server will respond with 200 statuscode.
+            // If params.cb specified, then this callback will have no affect.
             setDefaultValue("callback", null);
+            // callbackVerify {function}
+            // Callback, that will be called, when programm will get response from the server. Usefull to verify server response.
+            // Should return true, if the test was successful, false otherwise.
+            // If not specified, then by default the test will be successful (or not, considering the statuscode).
+            setDefaultValue("callbackVerify", null);
+            // numberOfRequests {integer}
+            // Specifies how many times program should send requests to the server.
             setDefaultValue("numberOfRequests", 1);
+            // mwApp {*|array}
+            // Middleware or array of middlewares for Rocky.use
+            setDefaultValue("mwApp", []);
+            // mwAppArray {array}
+            // Array of middlewares for Rocky.use, that applied one by one
+            setDefaultValue("mwAppArray", []);
+            // mw {*|array}
+            // Middleware or array of middlewares for Rocky.Route.use
+            setDefaultValue("mw", []);
+            // mwArray {array}
+            // Array of middlewares for Rocky.Route.use, that applied one by one
+            setDefaultValue("mwArray", []);
+            // onAuthorizeApp|onUnauthorizedApp|onTimeoutApp|onNotFoundApp|onExceptionApp {*}
+            // Specifies handlers for Rocky.authorize|Rocky.onUnauthorized|Rocky.onTimeout|Rocky.onNotFound|Rocky.onException
             setDefaultValue("onAuthorizeApp", null);
             setDefaultValue("onUnauthorizedApp", null);
             setDefaultValue("onTimeoutApp", null);
             setDefaultValue("onNotFoundApp", null);
             setDefaultValue("onExceptionApp", null);
+            // onAuthorizeRoute|onUnauthorizedRoute|onTimeoutRoute|onExceptionRoute {*}
+            // Specifies handlers for Rocky.Route.authorize|Rocky.Route.onUnauthorized|Rocky.Route.onTimeout|Rocky.Route.onException
             setDefaultValue("onAuthorizeRoute", null);
             setDefaultValue("onUnauthorizedRoute", null);
             setDefaultValue("onTimeoutRoute", null);
@@ -63,8 +140,54 @@ function createTest(params) {
             return;
         }
         try {
+            // Call Rocky.Route constructor directly
+            if (params.paramsRockyRoute != null) {
+                local illegalRoute = Rocky.Route(params.paramsRockyRoute);
+                if (params.onAuthorizeRoute != null) {
+                    illegalRoute.authorize(params.onAuthorizeRoute);
+                }
+                if (params.onUnauthorizedRoute != null) {
+                    illegalRoute.onUnauthorized(params.onUnauthorizedRoute);
+                }
+                if (params.onTimeoutRoute != null) {
+                    illegalRoute.onTimeout(params.onTimeoutRoute);
+                }
+                if (params.onExceptionRoute != null) {
+                    illegalRoute.onException(params.onExceptionRoute);
+                }
+                illegalRoute.use(params.mw);
+                foreach (element in params.mwArray) {
+                    illegalRoute.use(element);
+                }
+            }
+            // Call Rocky.Context constructor directly
+            if (params.paramsRockyContext != null) {
+                local illegalContext = Rocky.Context(params.paramsRockyContext[0], params.paramsRockyContext[1]);
+                if (params.paramsRockyContextAdditionalUsage != null && params.paramsRockyContextAdditionalUsage) {
+                    local tmp;
+                    tmp = illegalContext.isComplete();
+                    illegalContext.setHeader("Header", "here");
+                    tmp = illegalContext.getHeader("Header");
+                    tmp = illegalContext.req.method;
+                    tmp = illegalContext.req.path;
+                    tmp = illegalContext.req.query;
+                    tmp = illegalContext.req.headers;
+                    tmp = illegalContext.req.body;
+                    tmp = illegalContext.id;
+                    tmp = illegalContext.userdata;
+                    tmp = illegalContext.path;
+                    tmp = illegalContext.matches;
+                    tmp = illegalContext.isbrowser();
+                    illegalContext.send(200);
+                }
+            }
+        } catch(ex) {
+            reject("Unexpected error while call constructors directly: " + ex);
+            return;
+        }
+        try {
             // Setup Rocky handlers
-            app = Rocky(params.paramsApp);
+            app = Rocky(params.paramsRocky);
             if (params.onAuthorizeApp != null) {
                 app.authorize(params.onAuthorizeApp);
             }
@@ -99,19 +222,35 @@ function createTest(params) {
         }
         try {
             // Setup Rocky.Route handlers
-            route = app.on(params.method, params.signature, function(context) {
-                try {
-                    if (!params.timeout) {
-                        if (params.callback != null) {
-                            params.callback(context);
-                        } else {
-                            context.send(200, {"message": "OK"});
+            local cb = params.cb;
+            if (cb == null) {
+                cb = function(context) {
+                    try {
+                        if (!params.timeout) {
+                            if (params.callback != null) {
+                                params.callback(context);
+                            } else {
+                                context.send(200, {"message": "OK"});
+                            }
                         }
+                    } catch (ex) {
+                        reject("Unexpected error at Rocky.on callback: " + ex);
                     }
-                } catch (ex) {
-                    reject("Unexpected error at Rocky.on callback: " + ex);
+                }.bindenv(this);
+            }
+            if (params.method in app && !params.methodStrictUsage) {
+                if (params.timeoutRoute == null) {
+                    route = app[params.method](params.signature, cb);
+                } else {
+                    route = app[params.method](params.signature, cb, params.timeoutRoute);
                 }
-            }.bindenv(this));
+            } else {
+                if (params.timeoutRoute == null) {
+                    route = app.on(params.method, params.signature, cb);
+                } else {
+                    route = app.on(params.method, params.signature, cb, params.timeoutRoute);
+                }
+            }
             if (params.onAuthorizeRoute != null) {
                 route.authorize(params.onAuthorizeRoute);
             }
@@ -159,13 +298,16 @@ function createTest(params) {
                         );
                         req.sendasync(function(res) {
                             try {
-                                local message = "Wrong response.statuscode " + res.statuscode + ", should be " + params.statuscode;
-                                if (assertDeepEqualWrap(params.statuscode, res.statuscode, message)) {
-                                    if (++numberOfSucceedRequests >= numberOfRequests) {
-                                        resolve();
+                                if (typeof params.callbackVerify != "function" || (typeof params.callbackVerify == "function" && params.callbackVerify(res))) {
+                                    if (assertDeepEqualWrap(params.statuscode, res.statuscode)) {
+                                        if (++numberOfSucceedRequests >= numberOfRequests) {
+                                            resolve();
+                                        }
+                                    } else {
+                                        reject("Wrong response.statuscode " + res.statuscode + ", should be " + params.statuscode + ". Response body: " + res.body);
                                     }
                                 } else {
-                                    reject(message);
+                                    reject("Response verification failed by params.callbackVerify function");
                                 }
                             } catch (ex) {
                                 reject("Unexpected error while send request (sendasync): " + ex);
@@ -183,12 +325,102 @@ function createTest(params) {
     }.bindenv(this));
 }
 
+// createTestAll
+// Create Promise for series of tests testing Rocky
+// 
+// @param {array} tests - Array of 'params' for createTest(params)
+// @return {Promise}
+function createTestAll(tests = []) {
+    return Promise(function(resolve, reject) {
+        try {
+            if (typeof tests != "array") {
+                throw "Invalid type of createTestAll 'tests': " + typeof tests;
+            }
+            local length = tests.len();
+            local index = -1;
+            local interrupt = false;
+            local execute;
+            execute = function() {
+                try {
+                    if (++index >= length) {
+                        resolve();
+                    } else if (interrupt) {
+                        reject();
+                    } else {
+                        local test = tests[index];
+                        if (typeof test != "table") {
+                            throw "Invalid type of createTest 'params': " + typeof test;
+                        }
+                        createTest(test)
+                            .then(function(value) {
+                                imp.wakeup(0, execute);
+                            })
+                            .fail(function(reason) {
+                                interrupt = true;
+                                reject(reason);
+                            });
+                    }
+                } catch(ex) {
+                    interrupt = true;
+                    reject("Unexpected error while execute series of tests: " + ex);
+                }
+            }.bindenv(this);
+            execute();
+        } catch(ex) {
+            reject("Unexpected error while execute series of tests: " + ex);
+        }
+    }.bindenv(this));
+}
+
+// Wrapper of Perform a deep comparison of two values
+// Useful for comparing arrays or tables
+// @param {*} expected
+// @param {*} actual
+// @param {string} message
 function assertDeepEqualWrap(expected, actual, message = null) {
     try {
         this.assertDeepEqual(expected, actual, message);
         return true;
     } catch (ex) {
-        //this.info(ex);
+        // this.info(ex);
         return false;
+    }
+}
+
+// Perform a deep verification of containing the first table, class or array in the second
+// @param {table|class|array} first
+// @param {table|class|array} second
+// @param {string} message
+// @private
+function deepContain(first, second, message = null) {
+    foreach (k, v in first) {
+        local tmp = null;
+        if (k in second) {
+            tmp = second[k];
+        } else if ("string" == type(k)) {
+            if (k.tolower() in second) {
+                tmp = second[k.tolower()];
+            } else if (k.toupper() in second) {
+                tmp = "" + second[k.toupper()];
+            }
+        }
+        if (tmp == null || !assertDeepEqualWrap("" + v, "" + tmp, message)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Perform a deep loging for the first table, class or array
+// @param {table|class|array} value
+// @param {string} prefix - can be indent in the log line
+// @private
+function deepLog(value, prefix = "") {
+    foreach (k, v in value) {
+        this.info(prefix + k + "=" + v);
+        local typeOfValue = type(v);
+        if ("table" == typeOfValue || "class" == typeOfValue || "array" == typeOfValue) {
+            deepLog(v, prefix + "  ");
+        }
     }
 }

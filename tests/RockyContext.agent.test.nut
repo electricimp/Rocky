@@ -147,19 +147,18 @@ class RockyContext extends ImpTestCase {
     function testPath() {
         local p = ["testPath", "a", "b", "c"]
         return createTest({
-            "signature": "/testPath/a/b/c",  /* "/" + p.join("/") */
+            "signature": "/testPath/a/b/c",  // "/" + p.join("/")
             "callback": function(context) {
                 try {
-                    this.info(context.path);
-                    this.info(p);
                     if (context.path.len() != p.len()) {
                         throw "context.path contains invalid number of items";
                     }
                     for (local i = 0; i < 4; i++) {
-                        if (context.path[i] != p[i]) {
-                            throw "context.path contains invalid item: '" + context.path[i] + "' != '" + p[i] + "'";
+                        if (context.path[i].tolower() != p[i].tolower()) {
+                            throw "context.path contains invalid item: '" + context.path[i].tolower() + "' != '" + p[i].tolower() + "'";
                         }
                     }
+                    context.send(200, {"message": "OK"});
                 } catch (ex) {
                     this.info(ex);
                     context.send(500, {"error": ex});
@@ -174,11 +173,11 @@ class RockyContext extends ImpTestCase {
             "signatureOverride": "/testMatches/hello",
             "callback": function(context) {
                 try {
-                    if (context.matches[0] != "/testMatches/hello") {
-                        throw "Invalid context.matches[0] value: " + context.matches[0];
+                    if (context.matches[0].tolower() != "/testMatches/hello".tolower()) {
+                        throw "Invalid context.matches[0] value: " + context.matches[0].tolower();
                     }
-                    if (context.matches[1] != "hello") {
-                        throw "Invalid context.matches[1] value: " + context.matches[1];
+                    if (context.matches[1].tolower() != "hello".tolower()) {
+                        throw "Invalid context.matches[1] value: " + context.matches[1].tolower();
                     }
                     context.send(200, {"message": "OK"});
                 } catch (ex) {

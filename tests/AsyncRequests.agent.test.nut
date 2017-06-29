@@ -28,12 +28,12 @@
 
 // AsyncRequests
 // Tests for Rocky.getContext, Rocky.sendToAll, Rocky.Context.id, Rocky.Context.isComplete, Rocky.Context.userdata
-//
 class AsyncRequests extends ImpTestCase {
 
     @include __PATH__+"/Core.nut"
 
     connections = null;
+    
     function setUp() {
         this.connections = [];
     }
@@ -51,7 +51,25 @@ class AsyncRequests extends ImpTestCase {
             completeMultipleAsyncRequests();
         }.bindenv(this));
         return createTest({
-            "signature": "/testMultipleAsyncRequests"
+            "signature": "/testMultipleAsyncRequests",
+            "paramsRocky": {
+                "timeout": 20
+            },
+            "numberOfRequests": 5,
+            "callback": asyncCallbackMultiple.bindenv(this)
+        });
+    }
+
+    function testMultipleAsyncRequestsWithSendToAll() {
+        this.info("This test will take a couple of seconds");
+        imp.wakeup(10, function() {
+            completeMultipleAsyncRequestsWithSendToAll();
+        }.bindenv(this));
+        return createTest({
+            "signature": "/testMultipleAsyncRequestsWithSendToAll",
+            "paramsRocky": {
+                "timeout": 20
+            },
             "numberOfRequests": 5,
             "callback": asyncCallbackMultiple.bindenv(this)
         });
@@ -90,8 +108,16 @@ class AsyncRequests extends ImpTestCase {
         this.connections.push(context.id);
     }
 
-    function completeMultipleAsyncRequests() {
+    function completeMultipleAsyncRequestsWithSendToAll() {
         Rocky.sendToAll(200, {"message": "OK"});
+        this.connections.clear();
+    }
+
+    function completeMultipleAsyncRequests() {
+        foreach (cid in this.connections) {
+            local ctx = Rocky.getContext(cid);
+            ctx.send(200, {"message": "OK"});
+        }
         this.connections.clear();
     }
 

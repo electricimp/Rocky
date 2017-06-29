@@ -23,7 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 function getVerb() {
-    return "TRACE";
+    return "CONNECT";
 }
 
-@include __PATH__+"/../GenericVerbCompatibilityTest.nut"
+@include __PATH__+"/../CoreRockyMethod.nut"

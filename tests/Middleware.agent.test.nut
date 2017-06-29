@@ -34,6 +34,7 @@ class Middleware extends ImpTestCase {
     @include __PATH__+"/CoreHandlers.nut"
 
     auth = null;
+    
     function setUp() {
         this.auth = "Basic 123456789qwerty";
     }
@@ -79,9 +80,29 @@ class Middleware extends ImpTestCase {
 
     function testCORSMiddleware() {
         return createTest({
+            "method": "OPTIONS",
             "signature": "/testCORSMiddleware", 
-            "paramsApp": {"accessControl": false}, 
-            "mwApp": mwCustomCORS.bindenv(this)
+            "paramsRocky": {"accessControl": false}, 
+            "mwApp": mwCustomCORS.bindenv(this),
+            "callbackVerify": function(res) {
+                try {
+                    if (res.headers["access-control-allow-origin"] != "*") {
+                        throw "Response header 'Access-Control-Allow-Origin' must contain '*'";
+                    }
+                    if (res.headers["access-control-allow-headers"] != "Origin, X-Requested-With, Content-Type, Accept, X-Version") {
+                        throw "Response header 'Access-Control-Allow-Headers' must contain 'Origin, X-Requested-With, Content-Type, Accept, X-Version'";
+                    }
+                    if (res.headers["access-control-allow-methods"] != "POST, PUT, PATCH, GET, OPTIONS") {
+                        throw "Response header 'Access-Control-Allow-Methods' must contain 'POST, PUT, PATCH, GET, OPTIONS'";
+                    }
+                    return true;
+                } catch (ex) {
+                    this.info(ex);
+                    return false;
+                }
+                this.info(res.headers);
+                
+            }.bindenv(this)
         });
     }
 
@@ -139,12 +160,10 @@ class Middleware extends ImpTestCase {
     }
     
     function mwPrintInfo(context, next) {
-        /*
-        this.info("Request received:");
-        this.info("METHOD: " + context.req.method.tolower());
-        this.info("PATH: " + context.req.path.tolower());
-        this.info("TIME: " + time());
-        */
+        // this.info("Request received:");
+        // this.info("METHOD: " + context.req.method.tolower());
+        // this.info("PATH: " + context.req.path.tolower());
+        // this.info("TIME: " + time());
         next();
     }
 
