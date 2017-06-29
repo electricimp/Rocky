@@ -24,9 +24,70 @@
 // "Promise" symbol is injected dependency from ImpUnit_Promise module,
 // while class being tested can be accessed from global scope as "::Promise".
 
+// Default params for createTest function
+defaultParams = {
+    // Options for Rocky constructor
+    "paramsRocky": {},
+    // Options for calling Rocky.Route constructor directly
+    "paramsRockyRoute": null,
+    // Options for calling Rocky.Context constructor directly
+    "paramsRockyContext": null,
+    // Use for calling Rocky.Context constructor directly. If true, then all Rocky.Context methods will be called.
+    "paramsRockyContextAdditionalUsage": false,
+    // Method to send and receive requests
+    "method": "GET",
+    // If true, get post put methods will execute with Rocky.on function directly.
+    "methodStrictUsage": false,
+    // Signature to receive requests
+    "signature": "/test",
+    // Signature to send requests
+    "signatureOverride": null,
+    // Headers to send requests
+    "headers": {},
+    // Body to send requests
+    "body": "",
+    // If true, server will not respond to received requests
+    "timeout": false,
+    // If defined, set timeout param at Rocky.on|Rocky.VERB
+    "timeoutRoute": null,
+    // Expected statuscode of server's response. If real statuscode will be different, then test will be failed.
+    "statuscode": 200,
+    // Callback, that will be called, when server will receive new request. This callback (if specified) will be passed directly into Rocky.on method.
+    "cb": null,
+    // Callback, that will be called, when server will receive new request. 
+    // If not specified, then server will respond with 200 statuscode.
+    // If params.cb specified, then this callback will have no affect.
+    "callback": null,
+    // Callback, that will be called, when programm will get response from the server. Usefull to verify server response.
+    // Should return true, if the test was successful, false otherwise.
+    // If not specified, then by default the test will be successful (or not, considering the statuscode).
+    "callbackVerify": null,
+    // Specifies how many times program should send requests to the server.
+    "numberOfRequests": 1,
+    // Middleware or array of middlewares for Rocky.use
+    "mwApp": [],
+    // Array of middlewares for Rocky.use, that applied one by one
+    "mwAppArray": [],
+    // Middleware or array of middlewares for Rocky.Route.use
+    "mw": [],
+    // Array of middlewares for Rocky.Route.use, that applied one by one
+    "mwArray": [],
+    // Specifies handlers for Rocky.authorize|Rocky.onUnauthorized|Rocky.onTimeout|Rocky.onNotFound|Rocky.onException
+    "onAuthorizeApp": null,
+    "onUnauthorizedApp": null,
+    "onTimeoutApp": null,
+    "onNotFoundApp": null,
+    "onExceptionApp": null,
+    // Specifies handlers for Rocky.Route.authorize|Rocky.Route.onUnauthorized|Rocky.Route.onTimeout|Rocky.Route.onException
+    "onAuthorizeRoute": null,
+    "onUnauthorizedRoute": null,
+    "onTimeoutRoute": null,
+    "onExceptionRoute": null
+};
+
 // createTest
 // Create Promise for testing Rocky.
-// All customization is carried out through a single parameter - table. Table's params described below.
+// All customization is carried out through a single parameter - table. Table's params described above.
 // Scenario of the method:
 // 1) Apply default values to 'params' if undefined
 // 2) Create Rocky instance
@@ -45,100 +106,8 @@ function createTest(params = {}) {
     return Promise(function(resolve, reject) {
         local app;
         local route;
-        try {
-            // Setup default values
-            local setDefaultValue = function(key, value) {
-                if (!(key in params) || params[key] == null) {
-                    params[key] <- value;
-                }
-            }.bindenv(this);
-            // -------------------------------
-            // -- Description of parameters --
-            // -------------------------------
-            // paramsRocky {table}
-            // Options for Rocky constructor
-            setDefaultValue("paramsRocky", {});
-            // paramsRockyRoute {table}
-            // Options for calling Rocky.Route constructor directly
-            setDefaultValue("paramsRockyRoute", null);
-            // paramsRockyContext {table}
-            // Options for calling Rocky.Context constructor directly
-            setDefaultValue("paramsRockyContext", null);
-            // paramsRockyContextAdditionalUsage {boolean}
-            // Use for calling Rocky.Context constructor directly. If true, then all Rocky.Context methods will be called.
-            setDefaultValue("paramsRockyContextAdditionalUsage", false);
-            // method {string}
-            // Method to send and receive requests
-            setDefaultValue("method", "GET");
-            // methodStrictUsage {boolean}
-            // If true, get post put methods will execute with Rocky.on function directly.
-            setDefaultValue("methodStrictUsage", false);
-            // signature {string}
-            // Signature to receive requests
-            setDefaultValue("signature", "/test");
-            // signatureOverride {string}
-            // Signature to send requests
-            setDefaultValue("signatureOverride", null);
-            // headers {table}
-            // Headers to send requests
-            setDefaultValue("headers", {});
-            // body {string}
-            // Body to send requests
-            setDefaultValue("body", "");
-            // timeout {boolean}
-            // If true, server will not respond to received requests
-            setDefaultValue("timeout", false);
-            // timeoutRoute {int}
-            // If defined, set timeout param at Rocky.on|Rocky.VERB
-            setDefaultValue("timeoutRoute", null);
-            // statuscode {*}
-            // Expected statuscode of server's response. If real statuscode will be different, then test will be failed.
-            setDefaultValue("statuscode", 200);
-            // cb {function}
-            // Callback, that will be called, when server will receive new request. This callback (if specified) will be passed directly into Rocky.on method.
-            setDefaultValue("cb", null);
-            // callback {function}
-            // Callback, that will be called, when server will receive new request. 
-            // If not specified, then server will respond with 200 statuscode.
-            // If params.cb specified, then this callback will have no affect.
-            setDefaultValue("callback", null);
-            // callbackVerify {function}
-            // Callback, that will be called, when programm will get response from the server. Usefull to verify server response.
-            // Should return true, if the test was successful, false otherwise.
-            // If not specified, then by default the test will be successful (or not, considering the statuscode).
-            setDefaultValue("callbackVerify", null);
-            // numberOfRequests {integer}
-            // Specifies how many times program should send requests to the server.
-            setDefaultValue("numberOfRequests", 1);
-            // mwApp {*|array}
-            // Middleware or array of middlewares for Rocky.use
-            setDefaultValue("mwApp", []);
-            // mwAppArray {array}
-            // Array of middlewares for Rocky.use, that applied one by one
-            setDefaultValue("mwAppArray", []);
-            // mw {*|array}
-            // Middleware or array of middlewares for Rocky.Route.use
-            setDefaultValue("mw", []);
-            // mwArray {array}
-            // Array of middlewares for Rocky.Route.use, that applied one by one
-            setDefaultValue("mwArray", []);
-            // onAuthorizeApp|onUnauthorizedApp|onTimeoutApp|onNotFoundApp|onExceptionApp {*}
-            // Specifies handlers for Rocky.authorize|Rocky.onUnauthorized|Rocky.onTimeout|Rocky.onNotFound|Rocky.onException
-            setDefaultValue("onAuthorizeApp", null);
-            setDefaultValue("onUnauthorizedApp", null);
-            setDefaultValue("onTimeoutApp", null);
-            setDefaultValue("onNotFoundApp", null);
-            setDefaultValue("onExceptionApp", null);
-            // onAuthorizeRoute|onUnauthorizedRoute|onTimeoutRoute|onExceptionRoute {*}
-            // Specifies handlers for Rocky.Route.authorize|Rocky.Route.onUnauthorized|Rocky.Route.onTimeout|Rocky.Route.onException
-            setDefaultValue("onAuthorizeRoute", null);
-            setDefaultValue("onUnauthorizedRoute", null);
-            setDefaultValue("onTimeoutRoute", null);
-            setDefaultValue("onExceptionRoute", null);
-        } catch (ex) {
-            reject("Unexpected error while setup default values: " + ex);
-            return;
-        }
+        // Setup default values
+        params.setdelegate(defaultParams);
         try {
             // Call Rocky.Route constructor directly
             if (params.paramsRockyRoute != null) {
