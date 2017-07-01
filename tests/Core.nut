@@ -34,13 +34,17 @@ defaultParams = {
     "paramsRockyContext": null,
     // Use for calling Rocky.Context constructor directly. If true, then all Rocky.Context methods will be called.
     "paramsRockyContextAdditionalUsage": false,
-    // Method to send and receive requests
+    // Method to send requests
     "method": "GET",
+    // Method to receive requests
+    // If not specified, defaultParams.method will be used
+    "methodOverride": null,
     // If true, get post put methods will execute with Rocky.on function directly.
     "methodStrictUsage": false,
     // Signature to receive requests
     "signature": "/test",
     // Signature to send requests
+    // If not specified, defaultParams.signature will be used
     "signatureOverride": null,
     // Headers to send requests
     "headers": {},
@@ -259,9 +263,14 @@ function createTest(params = {}) {
                         numberOfRequests = 1;
                     }
                     for (local i = 0; i < numberOfRequests; i++) {
+                        local method = params.methodOverride != null ? params.methodOverride : params.method;
+                        if (typeof method == "string") {
+                            method.tolower();
+                        }
+                        local signature = typeof params.signatureOverride == "string" ? params.signatureOverride : params.signature;
                         local req = http.request(
-                            params.method.tolower(), 
-                            http.agenturl() + (typeof params.signatureOverride == "string" ? params.signatureOverride : params.signature), 
+                            method,
+                            http.agenturl() + signature, 
                             params.headers, 
                             params.body
                         );

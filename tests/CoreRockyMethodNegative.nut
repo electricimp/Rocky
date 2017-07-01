@@ -47,12 +47,14 @@ class CoreRockyMethod extends ImpTestCase {
             tests.push({
                 "signature": "/testInvalidParamsMethod", 
                 "method": element,
+                "methodOverride": getVerb(),
                 "onExceptionApp": onException.bindenv(this)
             });
         }
         tests.push({
             "signature": "/testInvalidParamsMethod", 
             "method": "#" + getVerb(),
+            "methodOverride": getVerb(),
             "onExceptionApp": onException.bindenv(this)
         });
         return createTestAll(tests);
