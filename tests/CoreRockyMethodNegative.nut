@@ -35,66 +35,101 @@ class CoreRockyMethod extends ImpTestCase {
     @include __PATH__+"/CoreHandlers.nut"
 
     values = null;
+    without_body = false;
     
     function setUp() {
         this.values = [null, true, 0, -1, 1, 13.37, "String", [1, 2], {"counter": "this"}, blob(64), function(){}];
+        this.without_body = getVerb().tolower() == "head";
         this.info("Test for VERB: " + getVerb());
     }
 
     function testInvalidParamsMethod() {
         local tests = [];
         foreach (element in this.values) {
+            if (element == null) {
+                continue;
+            }
             tests.push({
                 "signature": "/testInvalidParamsMethod", 
                 "method": element,
                 "methodOverride": getVerb(),
-                "onExceptionApp": onException.bindenv(this)
+                "onExceptionApp": (this.without_body ? function(context, ex){
+                    context.send(500);
+                } : onException).bindenv(this),
+                "onNotFoundApp": (this.without_body ? function(context){
+                    context.send(404);
+                } : onNotFound).bindenv(this)
             });
         }
         tests.push({
             "signature": "/testInvalidParamsMethod", 
             "method": "#" + getVerb(),
             "methodOverride": getVerb(),
-            "onExceptionApp": onException.bindenv(this)
+            "onExceptionApp": (this.without_body ? function(context, ex){
+                context.send(500);
+            } : onException).bindenv(this),
+            "onNotFoundApp": (this.without_body ? function(context){
+                context.send(404);
+            } : onNotFound).bindenv(this)
         });
-        return createTestAll(tests);
+        return createTestAll(tests, "only_fails");
     }
 
     function testInvalidParamsSignature() {
         local tests = [];
         foreach (element in this.values) {
+            if (element == null) {
+                continue;
+            }
             tests.push({
                 "signature": element, 
+                "signatureOverride": "/testInvalidParamsSignature", 
                 "method": getVerb(),
-                "onExceptionApp": onException.bindenv(this)
+                "onExceptionApp": (this.without_body ? function(context, ex){
+                    context.send(500);
+                } : onException).bindenv(this),
+                "onNotFoundApp": (this.without_body ? function(context){
+                    context.send(404);
+                } : onNotFound).bindenv(this)
             });
         }
-        return createTestAll(tests);
+        return createTestAll(tests, "only_fails");
     }
 
     function testInvalidParamsCallback() {
         local tests = [];
         foreach (element in this.values) {
-            tests.push({
+            local params = {
                 "signature": "/testInvalidParamsCallback",
                 "method": getVerb(),
                 "cb": element,
-                "onExceptionApp": onException.bindenv(this)
-            });
+                "onExceptionApp": (this.without_body ? function(context, ex){
+                    context.send(500);
+                } : onException).bindenv(this)
+            };
+            if (element == null) {
+                params["cbUseNull"] <- true;
+            }
+            tests.push(params);
         }
-        return createTestAll(tests);
+        return createTestAll(tests, "only_fails");
     }
 
     function testInvalidParamsTimeout() {
         local tests = [];
         foreach (element in this.values) {
+            if (element == null) {
+                continue;
+            }
             tests.push({
                 "signature": "/testInvalidParamsTimeout",
                 "method": getVerb(),
                 "timeoutRoute": element,
-                "onExceptionApp": onException.bindenv(this)
+                "onExceptionApp": (this.without_body ? function(context, ex){
+                    context.send(500);
+                } : onException).bindenv(this)
             });
         }
-        return createTestAll(tests);
+        return createTestAll(tests, "only_fails");
     }
 }

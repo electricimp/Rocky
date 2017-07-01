@@ -107,12 +107,17 @@ class Middleware extends ImpTestCase {
     }
 
     function testInvalidUseOfMiddleware() {
-        return createTest({
-            "signature": "/testInvalidUseOfMiddleware", 
-            "mwArray": [null, true, 0, 13.37, "Middleware", [1, 2], {"hi": "there"}, blob(64), function(){}],
-            "onExceptionApp": onException.bindenv(this),
-            "statuscode": 500
-        });
+        local tests = [];
+        local values = [null, true, 0, 13.37, "Middleware", [1, 2], {"hi": "there"}, blob(64)];
+        foreach (element in values) {
+            tests.push({
+                "signature": "/testInvalidUseOfMiddleware", 
+                "mw": element,
+                "onExceptionApp": onException.bindenv(this),
+                "statuscode": 500
+            });
+        }
+        return createTestAll(tests, "only_fails");
     }
 
     function testInvalidUseOfMiddlewares() {
@@ -121,7 +126,7 @@ class Middleware extends ImpTestCase {
             "mw": [42, {"hi": "there"}],
             "onExceptionApp": onException.bindenv(this),
             "statuscode": 500
-        });
+        }, "fail");
     }
 
     function testThrowableMiddleware() {

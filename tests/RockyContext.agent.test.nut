@@ -67,25 +67,23 @@ class RockyContext extends ImpTestCase {
     function testSendWithWrongStatuscode() {
         return createTest({
             "signature": "/testSendWithWrongStatuscode",
-            "onExceptionApp": onException.bindenv(this),
             "callback": function(context) {
                 context.send("wrong", {"message": "OK"});
             }.bindenv(this),
-            "statuscode": 500
-        });
+            "onExceptionApp": onException.bindenv(this)
+        }, "fail");
     }
 
     function testSendWithWrongMessage() {
         return createTest({
             "signature": "/testSendWithWrongMessage",
-            "onExceptionApp": onException.bindenv(this),
             "callback": function(context) {
                 context.send(200, function(a){
                     return a + 2;
                 });
             }.bindenv(this),
-            "statuscode": 500
-        });
+            "onExceptionApp": onException.bindenv(this)
+        }, "fail");
     }
 
     function testGetHeader() {

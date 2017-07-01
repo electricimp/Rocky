@@ -34,7 +34,10 @@ class CoreRockyMethod extends ImpTestCase {
     @include __PATH__+"/Core.nut"
     @include __PATH__+"/CoreHandlers.nut"
   
+    without_body = false;
+
     function setUp() {
+        this.without_body = getVerb().tolower() == "head";
         this.info("Test for VERB: " + getVerb());
     }
 
@@ -117,10 +120,10 @@ class CoreRockyMethod extends ImpTestCase {
                     } else if ("/test2/test3" != context.matches[1]) {
                         throw "Wrong context.matches[1]=" +  context.matches[1]+ ", should be /test2/test3";
                     }
-                    context.send(200, {"message": "OK"});
+                    context.send(200, this.without_body ? "" : {"message": "OK"});
                 } catch (ex) {
                     this.info(ex);
-                    context.send(500, {"error": ex});
+                    context.send(500, this.without_body ? "" : {"error": ex});
                 }
             }.bindenv(this)
         });
@@ -150,11 +153,10 @@ class CoreRockyMethod extends ImpTestCase {
     }
 
     function contentType(headers, contentType, body) {
-        return createTest({
+        local params = {
             "signature": "/contentType", 
             "method": getVerb(),
             "headers": headers,
-            "body": body,
             "callback": function(context) {
                 try {
                     local tmp = context.req.headers;
@@ -162,27 +164,33 @@ class CoreRockyMethod extends ImpTestCase {
                         if (contentType != tmp["content-type"]) {
                             throw "Wrong content-type=" + tmp["content-type"] + ", should be " + contentType;
                         }
-                        tmp = context.req.body;
-                        if ("table" != type(tmp)) {
-                            throw "Wrong type of context.req.body " + type(tmp) + ", should be table";
-                        } else if (!("contentType" in tmp) || "body" != tmp["contentType"]) {
-                            this.info("---------actual body----------");
-                            deepLog(tmp);
-                            throw "Wrong context.req.body";
+                        if (!this.without_body) {
+                            tmp = context.req.body;
+                            if ("table" != type(tmp)) {
+                                throw "Wrong type of context.req.body " + type(tmp) + ", should be table";
+                            } else if (!("contentType" in tmp) || "body" != tmp["contentType"]) {
+                                this.info("---------actual body----------");
+                                deepLog(tmp);
+                                throw "Wrong context.req.body";
+                            }
                         }
                     } else {
                         throw "content-type is absent in headers";
                     }
-                    context.send(200, body);
+                    context.send(200, this.without_body ? "" : body);
                 } catch (ex) {
                     this.info(ex);
-                    context.send(500, {"error": ex});
+                    context.send(500, this.without_body ? "" : {"error": ex});
                 }
             }.bindenv(this),
             "callbackVerify": function(res) {
-                return body == res.body;
+                return this.without_body ? true : body == res.body;
             }.bindenv(this)
-        });
+        };
+        if (!this.without_body) {
+            params["body"] <- body;
+        }
+        return createTest(params);
     }
 
     function testQuery() {
@@ -198,10 +206,10 @@ class CoreRockyMethod extends ImpTestCase {
                     if (!("second" in context.req.query && context.req.query["second"] == "2")) {
                         throw "Invalid context.req.query. Should contain 'second' with value '2'";
                     }
-                    context.send(200, {"message": "OK"});
+                    context.send(200, this.without_body ? "" : {"message": "OK"});
                 } catch (ex) {
                     this.info(ex);
-                    context.send(500, {"error": ex});
+                    context.send(500, this.without_body ? "" : {"error": ex});
                 }
             }.bindenv(this)
         });

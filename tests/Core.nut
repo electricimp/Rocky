@@ -58,6 +58,8 @@ defaultParams = {
     "statuscode": 200,
     // Callback, that will be called, when server will receive new request. This callback (if specified) will be passed directly into Rocky.on method.
     "cb": null,
+    // If true, defaultParams.cb will be forced to be null
+    "cbUseNull": false,
     // Callback, that will be called, when server will receive new request. 
     // If not specified, then server will respond with 200 statuscode.
     // If params.cb specified, then this callback will have no affect.
@@ -70,12 +72,8 @@ defaultParams = {
     "numberOfRequests": 1,
     // Middleware or array of middlewares for Rocky.use
     "mwApp": [],
-    // Array of middlewares for Rocky.use, that applied one by one
-    "mwAppArray": [],
     // Middleware or array of middlewares for Rocky.Route.use
     "mw": [],
-    // Array of middlewares for Rocky.Route.use, that applied one by one
-    "mwArray": [],
     // Specifies handlers for Rocky.authorize|Rocky.onUnauthorized|Rocky.onTimeout|Rocky.onNotFound|Rocky.onException
     "onAuthorizeApp": null,
     "onUnauthorizedApp": null,
@@ -105,9 +103,24 @@ defaultParams = {
 //    If more than one requests send, then test will be passed only when all responses verifications passed.
 // 
 // @param {table} params
+// @param {string} expect - Expected completion of the test (success|fail)
 // @return {Promise}
-function createTest(params = {}) {
+function createTest(params = {}, expect = "success") {
     return Promise(function(resolve, reject) {
+        local success = function() {
+            if (expect == "fail") {
+                reject("createTest test was resolved, but 'fail' expected");
+            } else {
+                resolve();
+            }
+        };
+        local fail = function(reason = null) {
+            if (expect == "fail") {
+                resolve();
+            } else {
+                reject(reason);
+            }
+        };
         local app;
         local route;
         // Setup default values
@@ -129,9 +142,6 @@ function createTest(params = {}) {
                     illegalRoute.onException(params.onExceptionRoute);
                 }
                 illegalRoute.use(params.mw);
-                foreach (element in params.mwArray) {
-                    illegalRoute.use(element);
-                }
             }
             // Call Rocky.Context constructor directly
             if (params.paramsRockyContext != null) {
@@ -155,7 +165,7 @@ function createTest(params = {}) {
                 }
             }
         } catch(ex) {
-            reject("Unexpected error while call constructors directly: " + ex);
+            fail("Unexpected error while call constructors directly: " + ex);
             return;
         }
         try {
@@ -177,37 +187,25 @@ function createTest(params = {}) {
                 app.onException(params.onExceptionApp);
             }
             app.use(params.mwApp);
-            local failed = false;
-            foreach (element in params.mwAppArray) {
-                try {
-                    app.use(element);
-                } catch (ex) {
-                    this.info("Unexpected error while setup Rocky.use: " + ex);
-                    failed = true;
-                }
-            }
-            if (failed) {
-                reject();
-            }
         } catch (ex) {
-            reject("Unexpected error while setup Rocky handlers: " + ex);
+            fail("Unexpected error while setup Rocky handlers: " + ex);
             return;
         }
         try {
             // Setup Rocky.Route handlers
             local cb = params.cb;
-            if (cb == null) {
+            if (cb == null && !params.cbUseNull) {
                 cb = function(context) {
                     try {
                         if (!params.timeout) {
                             if (params.callback != null) {
                                 params.callback(context);
                             } else {
-                                context.send(200, {"message": "OK"});
+                                context.send(200, "head" == params.method.tolower() ? "" : {"message": "OK"});
                             }
                         }
                     } catch (ex) {
-                        reject("Unexpected error at Rocky.on callback: " + ex);
+                        fail("Unexpected error at Rocky.on callback: " + ex);
                     }
                 }.bindenv(this);
             }
@@ -237,20 +235,8 @@ function createTest(params = {}) {
                 route.onException(params.onExceptionRoute);
             }
             route.use(params.mw);
-            local failed = false;
-            foreach (element in params.mwArray) {
-                try {
-                    route.use(element);
-                } catch (ex) {
-                    this.info("Unexpected error while setup Rocky.Route.use: " + ex);
-                    failed = true;
-                }
-            }
-            if (failed) {
-                reject();
-            }
         } catch (ex) {
-            reject("Unexpected error while setup Rocky.Route handlers: " + ex);
+            fail("Unexpected error while setup Rocky.Route handlers: " + ex);
             return;
         }
         try {
@@ -265,7 +251,7 @@ function createTest(params = {}) {
                     for (local i = 0; i < numberOfRequests; i++) {
                         local method = params.methodOverride != null ? params.methodOverride : params.method;
                         if (typeof method == "string") {
-                            method.tolower();
+                            method = method.tolower();
                         }
                         local signature = typeof params.signatureOverride == "string" ? params.signatureOverride : params.signature;
                         local req = http.request(
@@ -276,28 +262,33 @@ function createTest(params = {}) {
                         );
                         req.sendasync(function(res) {
                             try {
+                                local failedStatuscode = params.statuscode == 200 ? 500 : params.statuscode;
+                                if (expect == "fail" && !assertDeepEqualWrap(res.statuscode, failedStatuscode)) {
+                                    reject("createTest expected to be failed. Got response.statuscode " + res.statuscode + ", should be " + failedStatuscode + ". Response body: " + res.body);
+                                    return;
+                                }
                                 if (typeof params.callbackVerify != "function" || (typeof params.callbackVerify == "function" && params.callbackVerify(res))) {
                                     if (assertDeepEqualWrap(params.statuscode, res.statuscode)) {
                                         if (++numberOfSucceedRequests >= numberOfRequests) {
-                                            resolve();
+                                            success();
                                         }
                                     } else {
-                                        reject("Wrong response.statuscode " + res.statuscode + ", should be " + params.statuscode + ". Response body: " + res.body);
+                                        fail("Wrong response.statuscode " + res.statuscode + ", should be " + params.statuscode + ". Response body: " + res.body);
                                     }
                                 } else {
-                                    reject("Response verification failed by params.callbackVerify function");
+                                    fail("Response verification failed by params.callbackVerify function");
                                 }
                             } catch (ex) {
-                                reject("Unexpected error while send request (sendasync): " + ex);
+                                fail("Unexpected error while send request (sendasync): " + ex);
                             }
                         }.bindenv(this));
                     }
                 } catch (ex) {
-                    reject("Unexpected error while send request: " + ex);
+                    fail("Unexpected error while send request: " + ex);
                 }
             }.bindenv(this));
         } catch (ex) {
-            reject("Unexpected error while send request: " + ex);
+            fail("Unexpected error while send request: " + ex);
             return;
         }
     }.bindenv(this));
@@ -307,39 +298,66 @@ function createTest(params = {}) {
 // Create Promise for series of tests testing Rocky
 // 
 // @param {array} tests - Array of 'params' for createTest(params)
+// @param {string} type - The condition for the success of all tests (only_successes|only_fails)
 // @return {Promise}
-function createTestAll(tests = []) {
+function createTestAll(tests = [], type = "only_successes") {
     return Promise(function(resolve, reject) {
         try {
             if (typeof tests != "array") {
                 throw "Invalid type of createTestAll 'tests': " + typeof tests;
             }
             local length = tests.len();
-            local index = -1;
-            local interrupt = false;
+            local index = 0;
+            local successes = 0;
+            local fails = 0;
+            local last_reason = null;
             local execute;
             execute = function() {
                 try {
-                    if (++index >= length) {
-                        resolve();
-                    } else if (interrupt) {
-                        reject();
-                    } else {
-                        local test = tests[index];
-                        if (typeof test != "table") {
-                            throw "Invalid type of createTest 'params': " + typeof test;
+                    switch (type) {
+                        case "only_fails": {
+                            if (successes > 0) {
+                                reject("createTestAll resolved one of the tests, but 'type' was 'only_fails'");
+                                return;
+                            }
+                            if (fails >= length) {
+                                resolve();
+                                return;
+                            }
+                            break;
                         }
-                        createTest(test)
-                            .then(function(value) {
-                                imp.wakeup(0, execute);
-                            })
-                            .fail(function(reason) {
-                                interrupt = true;
-                                reject(reason);
-                            });
+                        case "only_successes": default: {
+                            if (fails > 0) {
+                                reject(last_reason);
+                                return;
+                            }
+                            if (successes >= length) {
+                                resolve();
+                                return;
+                            }
+                            break;
+                        }
                     }
+                    local test = tests[index++];
+                    if (typeof test != "table") {
+                        throw "Invalid type of createTest 'params': " + typeof test;
+                    }
+                    local expect = "success";
+                    if ("_createTestExpect" in test) {
+                        expect = test["_createTestExpect"];
+                    }
+                    createTest(test, expect)
+                        .then(function(value) {
+                            successes++;
+                        })
+                        .fail(function(reason) {
+                            fails++;
+                            last_reason = reason;
+                        })
+                        .finally(function(valueOrReason) {
+                            imp.wakeup(0, execute);
+                        });
                 } catch(ex) {
-                    interrupt = true;
                     reject("Unexpected error while execute series of tests: " + ex);
                 }
             }.bindenv(this);

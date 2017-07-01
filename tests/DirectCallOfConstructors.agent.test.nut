@@ -51,20 +51,6 @@ class DirectCallOfConstructors extends ImpTestCase {
         });
     }
 
-    function testRockyRouteUsageWithHandlers() {
-        return createTest({
-            "signature": "/testRockyRouteUsageWithHandlers",
-            "onExceptionApp": onException.bindenv(this),
-            "onAuthorizeRoute": onAuthorize.bindenv(this),
-            "onUnauthorizedRoute": onUnauthorized.bindenv(this),
-            "onTimeoutRoute": onTimeout.bindenv(this),
-            "onExceptionRoute": onException.bindenv(this),
-            "paramsRockyRoute": function() {
-                return null;
-            }.bindenv(this)
-        });
-    }
-
     function testRockyRouteUsageWithWrongOption() {
         local tests = [];
         foreach (element in this.values) {
@@ -77,12 +63,24 @@ class DirectCallOfConstructors extends ImpTestCase {
         return createTestAll(tests);
     }
 
+    function testRockyRouteUsageWithHandlers() {
+        return createTest({
+            "signature": "/testRockyRouteUsageWithHandlers",
+            "onAuthorizeRoute": onAuthorize.bindenv(this),
+            "onUnauthorizedRoute": onUnauthorized.bindenv(this),
+            "onTimeoutRoute": onTimeout.bindenv(this),
+            "onExceptionRoute": onException.bindenv(this),
+            "paramsRockyRoute": function() {
+                return null;
+            }.bindenv(this)
+        }, "fail");
+    }
+
     function testRockyRouteUsageWithHandlersAndWrongOption() {
         local tests = [];
         foreach (element in this.values) {
             tests.push({
                 "signature": "/testRockyRouteUsageWithHandlersAndWrongOption",
-                "onExceptionApp": onException.bindenv(this),
                 "onAuthorizeRoute": onAuthorize.bindenv(this),
                 "onUnauthorizedRoute": onUnauthorized.bindenv(this),
                 "onTimeoutRoute": onTimeout.bindenv(this),
@@ -90,7 +88,7 @@ class DirectCallOfConstructors extends ImpTestCase {
                 "paramsRockyRoute": element
             });
         }
-        return createTestAll(tests);
+        return createTestAll(tests, "only_fails");
     }
 
     // Rocky.Context
@@ -117,23 +115,21 @@ class DirectCallOfConstructors extends ImpTestCase {
 
     function testRockyContextUsageWithMethods() {
         return createTest({
-            "signature": "/testRockyContextUsage",
-            "onExceptionApp": onException.bindenv(this),
+            "signature": "/testRockyContextUsageWithMethods",
             "paramsRockyContext": [{}, {}],
             "paramsRockyContextAdditionalUsage": true
-        });
+        }, "fail");
     }
 
     function testRockyContextUsageWithMethodsAndWrongOption() {
         local tests = [];
         foreach (element in this.values) {
             tests.push({
-                "signature": "/testRockyContextUsageWithWrongOption",
-                "onExceptionApp": onException.bindenv(this),
+                "signature": "/testRockyContextUsageWithMethodsAndWrongOption",
                 "paramsRockyContext": [element, element],
             "paramsRockyContextAdditionalUsage": true
             });
         }
-        return createTestAll(tests);
+        return createTestAll(tests, "only_fails");
     }
 }
