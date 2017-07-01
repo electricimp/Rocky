@@ -77,7 +77,8 @@ class RockyConstructor extends ImpTestCase {
         foreach (element in this.values) {
             tests.push({
                 "signature": "/testTimeoutOption", 
-                "paramsRocky": {"timeout": element}
+                "paramsRocky": {"timeout": element},
+                "onExceptionApp": onException.bindenv(this)
             });
         }
         return createTestAll(tests);

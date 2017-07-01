@@ -141,7 +141,8 @@ class Middleware extends ImpTestCase {
     function testThrowableMiddlewareWithoutOnExceptionHandler() {
         return createTest({
             "signature": "/testThrowableMiddleware", 
-            "mw": mwThrowException.bindenv(this), 
+            "mw": mwThrowException.bindenv(this),
+            "onExceptionApp": onException.bindenv(this),
             "statuscode": 500
         });
     }
