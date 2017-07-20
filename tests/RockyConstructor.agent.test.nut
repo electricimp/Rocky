@@ -36,15 +36,15 @@ class RockyConstructor extends ImpTestCase {
     values = null;
     
     function setUp() {
-        this.values = [null, true, 0, -1, 1, 13.37, "String", [1, 2], {"counter": "this"}, blob(64), function(){}];
+        values = [null, true, 0, -1, 1, 13.37, "String", [1, 2], {"counter": "this"}, blob(64), function(){}];
     }
 
     function testRockyAccessControlOption() {
         local tests = [];
-        foreach (element in this.values) {
+        foreach (element in values) {
             tests.push({
                 "signature": "/testAccessControlOption", 
-                "paramsRocky": {"accessControl": element}
+                "params": {"accessControl": element}
             });
         }
         return createTestAll(tests);
@@ -52,10 +52,10 @@ class RockyConstructor extends ImpTestCase {
 
     function testRockyAllowUnsecureOption() {
         local tests = [];
-        foreach (element in this.values) {
+        foreach (element in values) {
             tests.push({
                 "signature": "/testAllowUnsecureOption", 
-                "paramsRocky": {"allowUnsecure": element}
+                "params": {"allowUnsecure": element}
             });
         }
         return createTestAll(tests);
@@ -63,10 +63,10 @@ class RockyConstructor extends ImpTestCase {
 
     function testRockyStrictRoutingOption() {
         local tests = [];
-        foreach (element in this.values) {
+        foreach (element in values) {
             tests.push({
                 "signature": "/testStrictRoutingOption", 
-                "paramsRocky": {"strictRouting": element}
+                "params": {"strictRouting": element}
             });
         }
         return createTestAll(tests);
@@ -74,11 +74,11 @@ class RockyConstructor extends ImpTestCase {
 
     function testRockyTimeoutOption() {
         local tests = [];
-        foreach (element in this.values) {
+        foreach (element in values) {
             tests.push({
                 "signature": "/testTimeoutOption", 
-                "paramsRocky": {"timeout": element},
-                "onExceptionApp": onException.bindenv(this)
+                "params": {"timeout": element},
+                "onException": onException.bindenv(this)
             });
         }
         return createTestAll(tests);
@@ -93,7 +93,7 @@ class RockyConstructor extends ImpTestCase {
         }
         return createTest({
             "signature": "/testWrongOption", 
-            "paramsRocky": params
+            "params": params
         });
     }
 }

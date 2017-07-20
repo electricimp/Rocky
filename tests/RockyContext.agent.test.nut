@@ -36,7 +36,7 @@ class RockyContext extends ImpTestCase {
     function testSend() {
         return createTest({
             "signature": "/testSend",
-            "onExceptionApp": onException.bindenv(this),
+            "onException": onException.bindenv(this),
             "callback": function(context) {
                 context.send(200, {"message": "OK"});
             }.bindenv(this)
@@ -46,7 +46,7 @@ class RockyContext extends ImpTestCase {
     function testSendWithOnlyMessage() {
         return createTest({
             "signature": "/testSendWithOnlyMessage",
-            "onExceptionApp": onException.bindenv(this),
+            "onException": onException.bindenv(this),
             "callback": function(context) {
                 context.send({"message": "OK"});
             }.bindenv(this)
@@ -56,7 +56,7 @@ class RockyContext extends ImpTestCase {
     function testSendWithOnlyStatuscode() {
         return createTest({
             "signature": "/testSendWithOnlyStatuscode",
-            "onExceptionApp": onException.bindenv(this),
+            "onException": onException.bindenv(this),
             "callback": function(context) {
                 context.send(201);
             }.bindenv(this),
@@ -70,7 +70,7 @@ class RockyContext extends ImpTestCase {
             "callback": function(context) {
                 context.send("wrong", {"message": "OK"});
             }.bindenv(this),
-            "onExceptionApp": onException.bindenv(this)
+            "onException": onException.bindenv(this)
         }, "fail");
     }
 
@@ -82,7 +82,7 @@ class RockyContext extends ImpTestCase {
                     return a + 2;
                 });
             }.bindenv(this),
-            "onExceptionApp": onException.bindenv(this)
+            "onException": onException.bindenv(this)
         }, "fail");
     }
 
@@ -103,7 +103,7 @@ class RockyContext extends ImpTestCase {
                     }
                     context.send(200, {"message": "OK"});
                 } catch (ex) {
-                    this.info(ex);
+                    info(ex);
                     context.send(500, {"error": ex});
                 }
             }.bindenv(this),
@@ -133,7 +133,7 @@ class RockyContext extends ImpTestCase {
                     }
                     context.send(200, {"message": "OK"});
                 } catch (ex) {
-                    this.info(ex);
+                    info(ex);
                     context.send(500, {"error": ex});
                 }
             }.bindenv(this),
@@ -145,7 +145,7 @@ class RockyContext extends ImpTestCase {
     function testPath() {
         local p = ["testPath", "a", "b", "c"]
         return createTest({
-            "signature": "/testPath/a/b/c",  // "/" + p.join("/")
+            "signature": "/testPath/a/b/c",
             "callback": function(context) {
                 try {
                     if (context.path.len() != p.len()) {
@@ -158,7 +158,7 @@ class RockyContext extends ImpTestCase {
                     }
                     context.send(200, {"message": "OK"});
                 } catch (ex) {
-                    this.info(ex);
+                    info(ex);
                     context.send(500, {"error": ex});
                 }
             }.bindenv(this)
@@ -179,7 +179,7 @@ class RockyContext extends ImpTestCase {
                     }
                     context.send(200, {"message": "OK"});
                 } catch (ex) {
-                    this.info(ex);
+                    info(ex);
                     context.send(500, {"error": ex});
                 }
             }.bindenv(this)

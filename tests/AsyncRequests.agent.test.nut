@@ -35,7 +35,7 @@ class AsyncRequests extends ImpTestCase {
     connections = null;
     
     function setUp() {
-        this.connections = [];
+        connections = [];
     }
 
     function testBasicAsyncRequest() {
@@ -46,13 +46,13 @@ class AsyncRequests extends ImpTestCase {
     }
 
     function testMultipleAsyncRequests() {
-        this.info("This test will take a couple of seconds");
+        info("This test will take a couple of seconds");
         imp.wakeup(10, function() {
             completeMultipleAsyncRequests();
         }.bindenv(this));
         return createTest({
             "signature": "/testMultipleAsyncRequests",
-            "paramsRocky": {
+            "params": {
                 "timeout": 20
             },
             "numberOfRequests": 5,
@@ -61,13 +61,13 @@ class AsyncRequests extends ImpTestCase {
     }
 
     function testMultipleAsyncRequestsWithSendToAll() {
-        this.info("This test will take a couple of seconds");
+        info("This test will take a couple of seconds");
         imp.wakeup(10, function() {
             completeMultipleAsyncRequestsWithSendToAll();
         }.bindenv(this));
         return createTest({
             "signature": "/testMultipleAsyncRequestsWithSendToAll",
-            "paramsRocky": {
+            "params": {
                 "timeout": 20
             },
             "numberOfRequests": 5,
@@ -90,14 +90,14 @@ class AsyncRequests extends ImpTestCase {
     }
 
     function asyncCallback(context) {
-        this.connections.push(context.id);
+        connections.push(context.id);
         imp.wakeup(1, function() {
             completeAsyncRequest(context.id);
         }.bindenv(this));
     }
 
     function completeAsyncRequest(cid) {
-        this.connections.remove(this.connections.find(cid));
+        connections.remove(connections.find(cid));
         local context = Rocky.getContext(cid);
         if (!context.isComplete()) {
             context.send(200, {"message": "OK"});
@@ -105,20 +105,20 @@ class AsyncRequests extends ImpTestCase {
     }
 
     function asyncCallbackMultiple(context) {
-        this.connections.push(context.id);
+        connections.push(context.id);
     }
 
     function completeMultipleAsyncRequestsWithSendToAll() {
         Rocky.sendToAll(200, {"message": "OK"});
-        this.connections.clear();
+        connections.clear();
     }
 
     function completeMultipleAsyncRequests() {
-        foreach (cid in this.connections) {
+        foreach (cid in connections) {
             local ctx = Rocky.getContext(cid);
             ctx.send(200, {"message": "OK"});
         }
-        this.connections.clear();
+        connections.clear();
     }
 
     function invalidContextsCallback(context) {
@@ -141,14 +141,14 @@ class AsyncRequests extends ImpTestCase {
 
     function asyncCallbackWithUserdata(context) {
         context.userdata = {"startTime": time()};
-        this.connections.push(context.id);
+        connections.push(context.id);
         imp.wakeup(2, function() {
             completeAsyncRequestWithUserdata(context.id);
         }.bindenv(this));
     }
 
     function completeAsyncRequestWithUserdata(cid) {
-        this.connections.remove(this.connections.find(cid));
+        connections.remove(connections.find(cid));
         local context = Rocky.getContext(cid);
         local elapsedTime = time() - context.userdata.startTime;
         if (!context.isComplete()) {

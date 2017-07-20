@@ -36,27 +36,27 @@ class Middleware extends ImpTestCase {
     auth = null;
     
     function setUp() {
-        this.auth = "Basic 123456789qwerty";
+        auth = "Basic 123456789qwerty";
     }
 
     function testSingleMiddleware() {
         return createTest({
             "signature": "/testSingleMiddleware", 
-            "mw": mwPrintInfo.bindenv(this)
+            "routeMiddleware": mwPrintInfo.bindenv(this)
         });
     }
 
     function testSingleMiddlewareWithReturn() {
         return createTest({
             "signature": "/testSingleMiddlewareWithReturn", 
-            "mw": mwWithReturn.bindenv(this)
+            "routeMiddleware": mwWithReturn.bindenv(this)
         });
     }
 
     function testMultiMiddlewares() {
         return createTest({
             "signature": "/testMultiMiddleware", 
-            "mw": [mwPrintInfo.bindenv(this), mwCheck4AuthPresence.bindenv(this)], 
+            "routeMiddleware": [mwPrintInfo.bindenv(this), mwCheck4AuthPresence.bindenv(this)], 
             "statuscode": 401
         });
     }
@@ -64,9 +64,9 @@ class Middleware extends ImpTestCase {
     function testMultiMiddlewares2() {
         return createTest({
             "signature": "/testMultiMiddleware", 
-            "mw": [mwPrintInfo.bindenv(this), mwCheck4AuthPresence.bindenv(this)], 
+            "routeMiddleware": [mwPrintInfo.bindenv(this), mwCheck4AuthPresence.bindenv(this)], 
             "headers": {
-                "Authorization": this.auth
+                "Authorization": auth
             }
         });
     }
@@ -74,7 +74,7 @@ class Middleware extends ImpTestCase {
     function testSameMultiMiddlewares() {
         return createTest({
             "signature": "/testMultiMiddleware", 
-            "mw": [mwPrintInfo.bindenv(this), mwPrintInfo.bindenv(this), mwPrintInfo.bindenv(this)]
+            "routeMiddleware": [mwPrintInfo.bindenv(this), mwPrintInfo.bindenv(this), mwPrintInfo.bindenv(this)]
         });
     }
 
@@ -82,8 +82,8 @@ class Middleware extends ImpTestCase {
         return createTest({
             "method": "OPTIONS",
             "signature": "/testCORSMiddleware", 
-            "paramsRocky": {"accessControl": false}, 
-            "mwApp": mwCustomCORS.bindenv(this),
+            "params": {"accessControl": false}, 
+            "appMiddleware": mwCustomCORS.bindenv(this),
             "callbackVerify": function(res) {
                 try {
                     if (res.headers["access-control-allow-origin"] != "*") {
@@ -97,11 +97,10 @@ class Middleware extends ImpTestCase {
                     }
                     return true;
                 } catch (ex) {
-                    this.info(ex);
+                    info(ex);
                     return false;
                 }
-                this.info(res.headers);
-                
+                info(res.headers);
             }.bindenv(this)
         });
     }
@@ -112,19 +111,19 @@ class Middleware extends ImpTestCase {
         foreach (element in values) {
             tests.push({
                 "signature": "/testInvalidUseOfMiddleware", 
-                "mw": element,
-                "onExceptionApp": onException.bindenv(this),
+                "routeMiddleware": element,
+                "onException": onException.bindenv(this),
                 "statuscode": 500
             });
         }
-        return createTestAll(tests, "only_fails");
+        return createTestAll(tests, "negative");
     }
 
     function testInvalidUseOfMiddlewares() {
         return createTest({
             "signature": "/testInvalidUseOfMiddlewares", 
-            "mw": [42, {"hi": "there"}],
-            "onExceptionApp": onException.bindenv(this),
+            "routeMiddleware": [42, {"hi": "there"}],
+            "onException": onException.bindenv(this),
             "statuscode": 500
         }, "fail");
     }
@@ -132,8 +131,8 @@ class Middleware extends ImpTestCase {
     function testThrowableMiddleware() {
         return createTest({
             "signature": "/testThrowableMiddleware", 
-            "mw": mwThrowException.bindenv(this), 
-            "onExceptionApp": onException.bindenv(this),
+            "routeMiddleware": mwThrowException.bindenv(this), 
+            "onException": onException.bindenv(this),
             "statuscode": 500
         });
     }
@@ -141,8 +140,8 @@ class Middleware extends ImpTestCase {
     function testThrowableMiddlewareWithoutOnExceptionHandler() {
         return createTest({
             "signature": "/testThrowableMiddleware", 
-            "mw": mwThrowException.bindenv(this),
-            "onExceptionApp": onException.bindenv(this),
+            "routeMiddleware": mwThrowException.bindenv(this),
+            "onException": onException.bindenv(this),
             "statuscode": 500
         });
     }
@@ -150,8 +149,8 @@ class Middleware extends ImpTestCase {
     function testMiddlewareWithoutParams() {
         return createTest({
             "signature": "/testMiddlewareWithoutParams", 
-            "mw": mwWithoutParams.bindenv(this),
-            "onExceptionApp": onException.bindenv(this),
+            "routeMiddleware": mwWithoutParams.bindenv(this),
+            "onException": onException.bindenv(this),
             "statuscode": 500
         });
     }
@@ -159,8 +158,8 @@ class Middleware extends ImpTestCase {
     function testMiddlewareWith1Param() {
         return createTest({
             "signature": "/testMiddlewareWith1Param", 
-            "mw": mwWith1Param.bindenv(this),
-            "onExceptionApp": onException.bindenv(this),
+            "routeMiddleware": mwWith1Param.bindenv(this),
+            "onException": onException.bindenv(this),
             "statuscode": 500
         });
     }
@@ -199,10 +198,10 @@ class Middleware extends ImpTestCase {
     }
 
     function mwWithoutParams() {
-        this.info("mwWithoutParams invoked");
+        info("mwWithoutParams invoked");
     }
 
     function mwWith1Param(context) {
-        this.info("mwWith1Param invoked");
+        info("mwWith1Param invoked");
     }
 }

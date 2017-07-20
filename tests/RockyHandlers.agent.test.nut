@@ -37,16 +37,16 @@ class RockyHandlers extends ImpTestCase {
     authWrong = null;
 
     function setUp() {
-        this.auth = "Basic 123456789qwerty";
-        this.authWrong = "Basic wrong";
+        auth = "Basic 123456789qwerty";
+        authWrong = "Basic wrong";
     }
 
     function testAuthorizationSuccess() {
         return createTest({
             "signature": "/testAuthorizationSuccess",
-            "onAuthorizeApp": onAuthorize.bindenv(this),
+            "onAuthorize": onAuthorize.bindenv(this),
             "headers": {
-                "Authorization": this.auth
+                "Authorization": auth
             }
         });
     }
@@ -54,10 +54,10 @@ class RockyHandlers extends ImpTestCase {
     function testAuthorizationFailure() {
         return createTest({
             "signature": "/testAuthorizationFailure",
-            "onAuthorizeApp": onAuthorize.bindenv(this),
-            "onUnauthorizedApp": onUnauthorized.bindenv(this),
+            "onAuthorize": onAuthorize.bindenv(this),
+            "onUnauthorized": onUnauthorized.bindenv(this),
             "headers": {
-                "Authorization": this.authWrong
+                "Authorization": authWrong
             },
             "statuscode": 401
         });
@@ -66,8 +66,8 @@ class RockyHandlers extends ImpTestCase {
     function testAuthorizationException() {
         return createTest({
             "signature": "/testAuthorizationException",
-            "onAuthorizeApp": throwException.bindenv(this),
-            "onExceptionApp": onException.bindenv(this),
+            "onAuthorize": throwException.bindenv(this),
+            "onException": onException.bindenv(this),
             "statuscode": 500
         });
     }
@@ -75,11 +75,11 @@ class RockyHandlers extends ImpTestCase {
     function testAuthorizationFailureException() {
        return createTest({
             "signature": "/testAuthorizationFailureException",
-            "onAuthorizeApp": onAuthorize.bindenv(this),
-            "onUnauthorizedApp": throwException.bindenv(this),
-            "onExceptionApp": onException.bindenv(this),
+            "onAuthorize": onAuthorize.bindenv(this),
+            "onUnauthorized": throwException.bindenv(this),
+            "onException": onException.bindenv(this),
             "headers": {
-                "Authorization": this.authWrong
+                "Authorization": authWrong
             },
             "statuscode": 500
         });
@@ -88,27 +88,27 @@ class RockyHandlers extends ImpTestCase {
     function testAuthorizationWrongReturn() {
         return createTest({
             "signature": "/testAuthorizationWrongReturn",
-            "onAuthorizeApp": onWrongAuthorize.bindenv(this)
+            "onAuthorize": onWrongAuthorize.bindenv(this)
         });
     }
 
     function testTimeout() {
-        this.info("This test will take a couple of seconds");
+        info("This test will take a couple of seconds");
         return createTest({
             "signature": "/testTimeout",
             "timeout": true,
-            "onTimeoutApp": onTimeout.bindenv(this),
+            "onTimeout": onTimeout.bindenv(this),
             "statuscode": 408
         });
     }
 
     function testTimeoutException() {
-        this.info("This test will take a couple of seconds");
+        info("This test will take a couple of seconds");
         return createTest({
             "signature": "/testTimeout",
             "timeout": true,
-            "onTimeoutApp": throwException.bindenv(this),
-            "onExceptionApp": onException.bindenv(this),
+            "onTimeout": throwException.bindenv(this),
+            "onException": onException.bindenv(this),
             "statuscode": 500
         });
     }
@@ -117,7 +117,7 @@ class RockyHandlers extends ImpTestCase {
         return createTest({
             "signature": "/testNotFound",
             "signatureOverride": "/testNotFoundIDontExist",
-            "onNotFoundApp": onNotFound.bindenv(this),
+            "onNotFound": onNotFound.bindenv(this),
             "statuscode": 404
         });
     }
@@ -126,8 +126,8 @@ class RockyHandlers extends ImpTestCase {
         return createTest({
             "signature": "/testNotFoundException",
             "signatureOverride": "/testNotFoundIDontExist",
-            "onNotFoundApp": throwException.bindenv(this),
-            "onExceptionApp": onException.bindenv(this),
+            "onNotFound": throwException.bindenv(this),
+            "onException": onException.bindenv(this),
             "statuscode": 500
         });
     }
@@ -136,8 +136,8 @@ class RockyHandlers extends ImpTestCase {
         return createTest({
             "signature": "/testExceptionAtOnException",
             "signatureOverride": "/testExceptionAtExceptionIDontExist",
-            "onNotFoundApp": throwException.bindenv(this),
-            "onExceptionApp": throwExceptionOnException.bindenv(this),
+            "onNotFound": throwException.bindenv(this),
+            "onException": throwExceptionOnException.bindenv(this),
             "statuscode": 500
         });
     }

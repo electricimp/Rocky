@@ -34,11 +34,11 @@ class CoreRockyMethod extends ImpTestCase {
     @include __PATH__+"/Core.nut"
     @include __PATH__+"/CoreHandlers.nut"
   
-    without_body = false;
+    withoutBody = false;
 
     function setUp() {
-        this.without_body = getVerb().tolower() == "head";
-        this.info("Test for VERB: " + getVerb());
+        withoutBody = getVerb().tolower() == "head";
+        info("Test for VERB: " + getVerb());
     }
 
     function testSimple() {
@@ -120,10 +120,10 @@ class CoreRockyMethod extends ImpTestCase {
                     } else if ("/test2/test3" != context.matches[1]) {
                         throw "Wrong context.matches[1]=" +  context.matches[1]+ ", should be /test2/test3";
                     }
-                    context.send(200, this.without_body ? "" : {"message": "OK"});
+                    context.send(200, withoutBody ? "" : {"message": "OK"});
                 } catch (ex) {
-                    this.info(ex);
-                    context.send(500, this.without_body ? "" : {"error": ex});
+                    info(ex);
+                    context.send(500, withoutBody ? "" : {"error": ex});
                 }
             }.bindenv(this)
         });
@@ -164,12 +164,12 @@ class CoreRockyMethod extends ImpTestCase {
                         if (contentType != tmp["content-type"]) {
                             throw "Wrong content-type=" + tmp["content-type"] + ", should be " + contentType;
                         }
-                        if (!this.without_body) {
+                        if (!withoutBody) {
                             tmp = context.req.body;
                             if ("table" != type(tmp)) {
                                 throw "Wrong type of context.req.body " + type(tmp) + ", should be table";
                             } else if (!("contentType" in tmp) || "body" != tmp["contentType"]) {
-                                this.info("---------actual body----------");
+                                info("---------actual body----------");
                                 deepLog(tmp);
                                 throw "Wrong context.req.body";
                             }
@@ -177,17 +177,17 @@ class CoreRockyMethod extends ImpTestCase {
                     } else {
                         throw "content-type is absent in headers";
                     }
-                    context.send(200, this.without_body ? "" : body);
+                    context.send(200, withoutBody ? "" : body);
                 } catch (ex) {
-                    this.info(ex);
-                    context.send(500, this.without_body ? "" : {"error": ex});
+                    info(ex);
+                    context.send(500, withoutBody ? "" : {"error": ex});
                 }
             }.bindenv(this),
             "callbackVerify": function(res) {
-                return this.without_body ? true : body == res.body;
+                return withoutBody ? true : body == res.body;
             }.bindenv(this)
         };
-        if (!this.without_body) {
+        if (!withoutBody) {
             params["body"] <- body;
         }
         return createTest(params);
@@ -206,10 +206,10 @@ class CoreRockyMethod extends ImpTestCase {
                     if (!("second" in context.req.query && context.req.query["second"] == "2")) {
                         throw "Invalid context.req.query. Should contain 'second' with value '2'";
                     }
-                    context.send(200, this.without_body ? "" : {"message": "OK"});
+                    context.send(200, withoutBody ? "" : {"message": "OK"});
                 } catch (ex) {
-                    this.info(ex);
-                    context.send(500, this.without_body ? "" : {"error": ex});
+                    info(ex);
+                    context.send(500, withoutBody ? "" : {"error": ex});
                 }
             }.bindenv(this)
         });

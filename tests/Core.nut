@@ -27,13 +27,13 @@
 // Default params for createTest function
 defaultParams = {
     // Options for Rocky constructor
-    "paramsRocky": {},
+    "params": {},
     // Options for calling Rocky.Route constructor directly
-    "paramsRockyRoute": null,
+    "routeParams": null,
     // Options for calling Rocky.Context constructor directly
-    "paramsRockyContext": null,
+    "contextParams": null,
     // Use for calling Rocky.Context constructor directly. If true, then all Rocky.Context methods will be called.
-    "paramsRockyContextAdditionalUsage": false,
+    "contextParamsAdditionalUsage": false,
     // Method to send requests
     "method": "GET",
     // Method to receive requests
@@ -71,15 +71,15 @@ defaultParams = {
     // Specifies how many times program should send requests to the server.
     "numberOfRequests": 1,
     // Middleware or array of middlewares for Rocky.use
-    "mwApp": [],
+    "appMiddleware": [],
     // Middleware or array of middlewares for Rocky.Route.use
-    "mw": [],
+    "routeMiddleware": [],
     // Specifies handlers for Rocky.authorize|Rocky.onUnauthorized|Rocky.onTimeout|Rocky.onNotFound|Rocky.onException
-    "onAuthorizeApp": null,
-    "onUnauthorizedApp": null,
-    "onTimeoutApp": null,
-    "onNotFoundApp": null,
-    "onExceptionApp": null,
+    "onAuthorize": null,
+    "onUnauthorized": null,
+    "onTimeout": null,
+    "onNotFound": null,
+    "onException": null,
     // Specifies handlers for Rocky.Route.authorize|Rocky.Route.onUnauthorized|Rocky.Route.onTimeout|Rocky.Route.onException
     "onAuthorizeRoute": null,
     "onUnauthorizedRoute": null,
@@ -123,184 +123,198 @@ function createTest(params = {}, expect = "success") {
         };
         local app;
         local route;
-        // Setup default values
-        params.setdelegate(defaultParams);
-        try {
-            // Call Rocky.Route constructor directly
-            if (params.paramsRockyRoute != null) {
-                local illegalRoute = Rocky.Route(params.paramsRockyRoute);
-                if (params.onAuthorizeRoute != null) {
-                    illegalRoute.authorize(params.onAuthorizeRoute);
-                }
-                if (params.onUnauthorizedRoute != null) {
-                    illegalRoute.onUnauthorized(params.onUnauthorizedRoute);
-                }
-                if (params.onTimeoutRoute != null) {
-                    illegalRoute.onTimeout(params.onTimeoutRoute);
-                }
-                if (params.onExceptionRoute != null) {
-                    illegalRoute.onException(params.onExceptionRoute);
-                }
-                illegalRoute.use(params.mw);
-            }
-            // Call Rocky.Context constructor directly
-            if (params.paramsRockyContext != null) {
-                local illegalContext = Rocky.Context(params.paramsRockyContext[0], params.paramsRockyContext[1]);
-                if (params.paramsRockyContextAdditionalUsage != null && params.paramsRockyContextAdditionalUsage) {
-                    local tmp;
-                    tmp = illegalContext.isComplete();
-                    illegalContext.setHeader("Header", "here");
-                    tmp = illegalContext.getHeader("Header");
-                    tmp = illegalContext.req.method;
-                    tmp = illegalContext.req.path;
-                    tmp = illegalContext.req.query;
-                    tmp = illegalContext.req.headers;
-                    tmp = illegalContext.req.body;
-                    tmp = illegalContext.id;
-                    tmp = illegalContext.userdata;
-                    tmp = illegalContext.path;
-                    tmp = illegalContext.matches;
-                    tmp = illegalContext.isbrowser();
-                    illegalContext.send(200);
-                }
-            }
-        } catch(ex) {
-            fail("Unexpected error while call constructors directly: " + ex);
-            return;
-        }
-        try {
-            // Setup Rocky handlers
-            app = Rocky(params.paramsRocky);
-            if (params.onAuthorizeApp != null) {
-                app.authorize(params.onAuthorizeApp);
-            }
-            if (params.onUnauthorizedApp != null) {
-                app.onUnauthorized(params.onUnauthorizedApp);
-            }
-            if (params.onTimeoutApp != null) {
-                app.onTimeout(params.onTimeoutApp);
-            }
-            if (params.onNotFoundApp != null) {
-                app.onNotFound(params.onNotFoundApp);
-            }
-            if (params.onExceptionApp != null) {
-                app.onException(params.onExceptionApp);
-            }
-            app.use(params.mwApp);
-        } catch (ex) {
-            fail("Unexpected error while setup Rocky handlers: " + ex);
-            return;
-        }
-        try {
-            // Setup Rocky.Route handlers
-            local cb = params.cb;
-            if (cb == null && !params.cbUseNull) {
-                cb = function(context) {
-                    try {
-                        if (!params.timeout) {
-                            if (params.callback != null) {
-                                params.callback(context);
-                            } else {
-                                context.send(200, "head" == params.method.tolower() ? "" : {"message": "OK"});
-                            }
-                        }
-                    } catch (ex) {
-                        fail("Unexpected error at Rocky.on callback: " + ex);
-                    }
-                }.bindenv(this);
-            }
-            if (params.method in app && !params.methodStrictUsage) {
-                if (params.timeoutRoute == null) {
-                    route = app[params.method](params.signature, cb);
-                } else {
-                    route = app[params.method](params.signature, cb, params.timeoutRoute);
-                }
-            } else {
-                if (params.timeoutRoute == null) {
-                    route = app.on(params.method, params.signature, cb);
-                } else {
-                    route = app.on(params.method, params.signature, cb, params.timeoutRoute);
-                }
-            }
+        params.setdelegate(defaultParams); // Setup default values
+        _createTestCallConstructorsDirectly(params, fail) && 
+        _createTestSetupHandlers(params, fail, app, route) && 
+        _createTestSendRequest(params, fail, success, expect);
+    }.bindenv(this));
+}
+
+function _createTestCallConstructorsDirectly(params, fail) {
+    try {
+        // Call Rocky.Route constructor directly
+        if (params.routeParams != null) {
+            local illegalRoute = Rocky.Route(params.routeParams);
             if (params.onAuthorizeRoute != null) {
-                route.authorize(params.onAuthorizeRoute);
+                illegalRoute.authorize(params.onAuthorizeRoute);
             }
             if (params.onUnauthorizedRoute != null) {
-                route.onUnauthorized(params.onUnauthorizedRoute);
+                illegalRoute.onUnauthorized(params.onUnauthorizedRoute);
             }
             if (params.onTimeoutRoute != null) {
-                route.onTimeout(params.onTimeoutRoute);
+                illegalRoute.onTimeout(params.onTimeoutRoute);
             }
             if (params.onExceptionRoute != null) {
-                route.onException(params.onExceptionRoute);
+                illegalRoute.onException(params.onExceptionRoute);
             }
-            route.use(params.mw);
-        } catch (ex) {
-            fail("Unexpected error while setup Rocky.Route handlers: " + ex);
-            return;
+            illegalRoute.use(params.routeMiddleware);
         }
-        try {
-            // Send request
-            imp.wakeup(0, function() {
+        // Call Rocky.Context constructor directly
+        if (params.contextParams != null) {
+            local illegalContext = Rocky.Context(params.contextParams[0], params.contextParams[1]);
+            if (params.contextParamsAdditionalUsage != null && params.contextParamsAdditionalUsage) {
+                local tmp;
+                tmp = illegalContext.isComplete();
+                illegalContext.setHeader("Header", "here");
+                tmp = illegalContext.getHeader("Header");
+                tmp = illegalContext.req.method;
+                tmp = illegalContext.req.path;
+                tmp = illegalContext.req.query;
+                tmp = illegalContext.req.headers;
+                tmp = illegalContext.req.body;
+                tmp = illegalContext.id;
+                tmp = illegalContext.userdata;
+                tmp = illegalContext.path;
+                tmp = illegalContext.matches;
+                tmp = illegalContext.isbrowser();
+                illegalContext.send(200);
+            }
+        }
+        return true;
+    } catch(ex) {
+        fail("Unexpected error while call constructors directly: " + ex);
+        return false;
+    }
+}
+
+function _createTestSetupHandlers(params, fail, app, route) {
+    try {
+        // Setup Rocky handlers
+        app = Rocky(params.params);
+        if (params.onAuthorize != null) {
+            app.authorize(params.onAuthorize);
+        }
+        if (params.onUnauthorized != null) {
+            app.onUnauthorized(params.onUnauthorized);
+        }
+        if (params.onTimeout != null) {
+            app.onTimeout(params.onTimeout);
+        }
+        if (params.onNotFound != null) {
+            app.onNotFound(params.onNotFound);
+        }
+        if (params.onException != null) {
+            app.onException(params.onException);
+        }
+        app.use(params.appMiddleware);
+    } catch (ex) {
+        fail("Unexpected error while setup Rocky handlers: " + ex);
+        return false;
+    }
+    try {
+        // Setup Rocky.Route handlers
+        local cb = params.cb;
+        if (cb == null && !params.cbUseNull) {
+            cb = function(context) {
                 try {
-                    local numberOfSucceedRequests = 0;
-                    local numberOfRequests = params.numberOfRequests;
-                    if (typeof numberOfRequests != "integer") {
-                        numberOfRequests = 1;
-                    }
-                    for (local i = 0; i < numberOfRequests; i++) {
-                        local method = params.methodOverride != null ? params.methodOverride : params.method;
-                        if (typeof method == "string") {
-                            method = method.tolower();
+                    if (!params.timeout) {
+                        if (params.callback != null) {
+                            params.callback(context);
+                        } else {
+                            context.send(200, "head" == params.method.tolower() ? "" : {"message": "OK"});
                         }
-                        local signature = typeof params.signatureOverride == "string" ? params.signatureOverride : params.signature;
-                        local req = http.request(
-                            method,
-                            http.agenturl() + signature, 
-                            params.headers, 
-                            params.body
-                        );
-                        req.sendasync(function(res) {
-                            try {
-                                local failedStatuscode = params.statuscode == 200 ? 500 : params.statuscode;
-                                if (expect == "fail" && !assertDeepEqualWrap(res.statuscode, failedStatuscode)) {
-                                    reject("createTest expected to be failed. Got response.statuscode " + res.statuscode + ", should be " + failedStatuscode + ". Response body: " + res.body);
-                                    return;
-                                }
-                                if (typeof params.callbackVerify != "function" || (typeof params.callbackVerify == "function" && params.callbackVerify(res))) {
-                                    if (assertDeepEqualWrap(params.statuscode, res.statuscode)) {
-                                        if (++numberOfSucceedRequests >= numberOfRequests) {
-                                            success();
-                                        }
-                                    } else {
-                                        fail("Wrong response.statuscode " + res.statuscode + ", should be " + params.statuscode + ". Response body: " + res.body);
-                                    }
-                                } else {
-                                    fail("Response verification failed by params.callbackVerify function");
-                                }
-                            } catch (ex) {
-                                fail("Unexpected error while send request (sendasync): " + ex);
-                            }
-                        }.bindenv(this));
                     }
                 } catch (ex) {
-                    fail("Unexpected error while send request: " + ex);
+                    fail("Unexpected error at Rocky.on callback: " + ex);
                 }
-            }.bindenv(this));
-        } catch (ex) {
-            fail("Unexpected error while send request: " + ex);
-            return;
+            }.bindenv(this);
         }
-    }.bindenv(this));
+        if (params.method in app && !params.methodStrictUsage) {
+            if (params.timeoutRoute == null) {
+                route = app[params.method](params.signature, cb);
+            } else {
+                route = app[params.method](params.signature, cb, params.timeoutRoute);
+            }
+        } else {
+            if (params.timeoutRoute == null) {
+                route = app.on(params.method, params.signature, cb);
+            } else {
+                route = app.on(params.method, params.signature, cb, params.timeoutRoute);
+            }
+        }
+        if (params.onAuthorizeRoute != null) {
+            route.authorize(params.onAuthorizeRoute);
+        }
+        if (params.onUnauthorizedRoute != null) {
+            route.onUnauthorized(params.onUnauthorizedRoute);
+        }
+        if (params.onTimeoutRoute != null) {
+            route.onTimeout(params.onTimeoutRoute);
+        }
+        if (params.onExceptionRoute != null) {
+            route.onException(params.onExceptionRoute);
+        }
+        route.use(params.routeMiddleware);
+    } catch (ex) {
+        fail("Unexpected error while setup Rocky.Route handlers: " + ex);
+        return false;
+    }
+    return true;
+}
+
+function _createTestSendRequest(params, fail, success, expect) {
+    try {
+        // Send request
+        imp.wakeup(0, function() {
+            try {
+                local numberOfSucceedRequests = 0;
+                local numberOfRequests = params.numberOfRequests;
+                if (typeof numberOfRequests != "integer") {
+                    numberOfRequests = 1;
+                }
+                for (local i = 0; i < numberOfRequests; i++) {
+                    local method = params.methodOverride != null ? params.methodOverride : params.method;
+                    if (typeof method == "string") {
+                        method = method.tolower();
+                    }
+                    local signature = typeof params.signatureOverride == "string" ? params.signatureOverride : params.signature;
+                    local req = http.request(
+                        method,
+                        http.agenturl() + signature, 
+                        params.headers, 
+                        params.body
+                    );
+                    req.sendasync(function(res) {
+                        try {
+                            local failedStatuscode = params.statuscode == 200 ? 500 : params.statuscode;
+                            if (expect == "fail" && !assertDeepEqualWrap(res.statuscode, failedStatuscode)) {
+                                reject("createTest expected to be failed. Got response.statuscode " + res.statuscode + ", should be " + failedStatuscode + ". Response body: " + res.body);
+                                return;
+                            }
+                            if (typeof params.callbackVerify != "function" || (typeof params.callbackVerify == "function" && params.callbackVerify(res))) {
+                                if (assertDeepEqualWrap(params.statuscode, res.statuscode)) {
+                                    if (++numberOfSucceedRequests >= numberOfRequests) {
+                                        success();
+                                    }
+                                } else {
+                                    fail("Wrong response.statuscode " + res.statuscode + ", should be " + params.statuscode + ". Response body: " + res.body);
+                                }
+                            } else {
+                                fail("Response verification failed by params.callbackVerify function");
+                            }
+                        } catch (ex) {
+                            fail("Unexpected error while send request (sendasync): " + ex);
+                        }
+                    }.bindenv(this));
+                }
+            } catch (ex) {
+                fail("Unexpected error while send request: " + ex);
+            }
+        }.bindenv(this));
+        return true;
+    } catch (ex) {
+        fail("Unexpected error while send request: " + ex);
+        return false;
+    }
 }
 
 // createTestAll
 // Create Promise for series of tests testing Rocky
 // 
 // @param {array} tests - Array of 'params' for createTest(params)
-// @param {string} type - The condition for the success of all tests (only_successes|only_fails)
+// @param {string} type - The condition for the success of all tests (positive|negative)
 // @return {Promise}
-function createTestAll(tests = [], type = "only_successes") {
+function createTestAll(tests = [], type = "positive") {
     return Promise(function(resolve, reject) {
         try {
             if (typeof tests != "array") {
@@ -310,14 +324,14 @@ function createTestAll(tests = [], type = "only_successes") {
             local index = 0;
             local successes = 0;
             local fails = 0;
-            local last_reason = null;
+            local lastReason = null;
             local execute;
             execute = function() {
                 try {
                     switch (type) {
-                        case "only_fails": {
+                        case "negative": {
                             if (successes > 0) {
-                                reject("createTestAll resolved one of the tests, but 'type' was 'only_fails'");
+                                reject("createTestAll resolved one of the tests, but 'type' was 'negative'");
                                 return;
                             }
                             if (fails >= length) {
@@ -326,9 +340,9 @@ function createTestAll(tests = [], type = "only_successes") {
                             }
                             break;
                         }
-                        case "only_successes": default: {
+                        case "positive": default: {
                             if (fails > 0) {
-                                reject(last_reason);
+                                reject(lastReason);
                                 return;
                             }
                             if (successes >= length) {
@@ -352,7 +366,7 @@ function createTestAll(tests = [], type = "only_successes") {
                         })
                         .fail(function(reason) {
                             fails++;
-                            last_reason = reason;
+                            lastReason = reason;
                         })
                         .finally(function(valueOrReason) {
                             imp.wakeup(0, execute);

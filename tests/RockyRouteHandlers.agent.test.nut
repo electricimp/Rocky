@@ -37,8 +37,8 @@ class RockyRouteHandlers extends ImpTestCase {
     authWrong = null;
 
     function setUp() {
-        this.auth = "Basic 123456789qwerty";
-        this.authWrong = "Basic wrong";
+        auth = "Basic 123456789qwerty";
+        authWrong = "Basic wrong";
     }
 
     function testAuthorizationSuccess() {
@@ -46,7 +46,7 @@ class RockyRouteHandlers extends ImpTestCase {
             "signature": "/testAuthorizationSuccess",
             "onAuthorizeRoute": onAuthorize.bindenv(this),
             "headers": {
-                "Authorization": this.auth
+                "Authorization": auth
             }
         });
     }
@@ -57,7 +57,7 @@ class RockyRouteHandlers extends ImpTestCase {
             "onAuthorizeRoute": onAuthorize.bindenv(this),
             "onUnauthorizedRoute": onUnauthorized.bindenv(this),
             "headers": {
-                "Authorization": this.authWrong
+                "Authorization": authWrong
             },
             "statuscode": 401
         });
@@ -93,7 +93,7 @@ class RockyRouteHandlers extends ImpTestCase {
     }
 
     function testTimeout() {
-        this.info("This test will take a couple of seconds");
+        info("This test will take a couple of seconds");
         return createTest({
             "signature": "/testTimeout",
             "timeout": true,
@@ -103,7 +103,7 @@ class RockyRouteHandlers extends ImpTestCase {
     }
 
     function testTimeoutException() {
-        this.info("This test will take a couple of seconds");
+        info("This test will take a couple of seconds");
         return createTest({
             "signature": "/testTimeout",
             "timeout": true,
@@ -120,7 +120,7 @@ class RockyRouteHandlers extends ImpTestCase {
             "onUnauthorizedRoute": throwException.bindenv(this),
             "onExceptionRoute": throwExceptionOnException.bindenv(this),
             "headers": {
-                "Authorization": this.authWrong
+                "Authorization": authWrong
             },
             "statuscode": 500
         });

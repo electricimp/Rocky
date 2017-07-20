@@ -36,7 +36,7 @@ class DirectCallOfConstructors extends ImpTestCase {
     values = null;
     
     function setUp() {
-        this.values = [null, true, 0, -1, 1, 13.37, "String", [1, 2], {"counter": "this"}, blob(64), function(){}];
+        values = [null, true, 0, -1, 1, 13.37, "String", [1, 2], {"counter": "this"}, blob(64), function(){}];
     }
 
     // Rocky.Route
@@ -44,8 +44,8 @@ class DirectCallOfConstructors extends ImpTestCase {
     function testRockyRouteUsage() {
         return createTest({
             "signature": "/testRockyRouteUsage",
-            "onExceptionApp": onException.bindenv(this),
-            "paramsRockyRoute": function() {
+            "onException": onException.bindenv(this),
+            "routeParams": function() {
                 return null;
             }.bindenv(this)
         });
@@ -53,11 +53,11 @@ class DirectCallOfConstructors extends ImpTestCase {
 
     function testRockyRouteUsageWithWrongOption() {
         local tests = [];
-        foreach (element in this.values) {
+        foreach (element in values) {
             tests.push({
                 "signature": "/testRockyRouteUsageWithWrongOption",
-                "onExceptionApp": onException.bindenv(this),
-                "paramsRockyRoute": element
+                "onException": onException.bindenv(this),
+                "routeParams": element
             });
         }
         return createTestAll(tests);
@@ -70,7 +70,7 @@ class DirectCallOfConstructors extends ImpTestCase {
             "onUnauthorizedRoute": onUnauthorized.bindenv(this),
             "onTimeoutRoute": onTimeout.bindenv(this),
             "onExceptionRoute": onException.bindenv(this),
-            "paramsRockyRoute": function() {
+            "routeParams": function() {
                 return null;
             }.bindenv(this)
         }, "fail");
@@ -78,17 +78,17 @@ class DirectCallOfConstructors extends ImpTestCase {
 
     function testRockyRouteUsageWithHandlersAndWrongOption() {
         local tests = [];
-        foreach (element in this.values) {
+        foreach (element in values) {
             tests.push({
                 "signature": "/testRockyRouteUsageWithHandlersAndWrongOption",
                 "onAuthorizeRoute": onAuthorize.bindenv(this),
                 "onUnauthorizedRoute": onUnauthorized.bindenv(this),
                 "onTimeoutRoute": onTimeout.bindenv(this),
                 "onExceptionRoute": onException.bindenv(this),
-                "paramsRockyRoute": element
+                "routeParams": element
             });
         }
-        return createTestAll(tests, "only_fails");
+        return createTestAll(tests, "negative");
     }
 
     // Rocky.Context
@@ -96,18 +96,18 @@ class DirectCallOfConstructors extends ImpTestCase {
     function testRockyContextUsage() {
         return createTest({
             "signature": "/testRockyContextUsage",
-            "onExceptionApp": onException.bindenv(this),
-            "paramsRockyContext": [{}, {}]
+            "onException": onException.bindenv(this),
+            "contextParams": [{}, {}]
         });
     }
 
     function testRockyContextUsageWithWrongOption() {
         local tests = [];
-        foreach (element in this.values) {
+        foreach (element in values) {
             tests.push({
                 "signature": "/testRockyContextUsageWithWrongOption",
-                "onExceptionApp": onException.bindenv(this),
-                "paramsRockyContext": [element, element]
+                "onException": onException.bindenv(this),
+                "contextParams": [element, element]
             });
         }
         return createTestAll(tests);
@@ -116,20 +116,20 @@ class DirectCallOfConstructors extends ImpTestCase {
     function testRockyContextUsageWithMethods() {
         return createTest({
             "signature": "/testRockyContextUsageWithMethods",
-            "paramsRockyContext": [{}, {}],
-            "paramsRockyContextAdditionalUsage": true
+            "contextParams": [{}, {}],
+            "contextParamsAdditionalUsage": true
         }, "fail");
     }
 
     function testRockyContextUsageWithMethodsAndWrongOption() {
         local tests = [];
-        foreach (element in this.values) {
+        foreach (element in values) {
             tests.push({
                 "signature": "/testRockyContextUsageWithMethodsAndWrongOption",
-                "paramsRockyContext": [element, element],
-            "paramsRockyContextAdditionalUsage": true
+                "contextParams": [element, element],
+                "contextParamsAdditionalUsage": true
             });
         }
-        return createTestAll(tests, "only_fails");
+        return createTestAll(tests, "negative");
     }
 }
