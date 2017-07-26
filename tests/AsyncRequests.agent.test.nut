@@ -24,13 +24,11 @@
 // "Promise" symbol is injected dependency from ImpUnit_Promise module,
 // while class being tested can be accessed from global scope as "::Promise".
 
-@include "github:electricimp/Rocky/Rocky.class.nut"
+@include __PATH__+"/Core.nut"
 
 // AsyncRequests
 // Tests for Rocky.getContext, Rocky.sendToAll, Rocky.Context.id, Rocky.Context.isComplete, Rocky.Context.userdata
-class AsyncRequests extends ImpTestCase {
-
-    @include __PATH__+"/Core.nut"
+class AsyncRequests extends Core {
 
     connections = null;
     

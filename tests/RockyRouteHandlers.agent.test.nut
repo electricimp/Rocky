@@ -24,13 +24,12 @@
 // "Promise" symbol is injected dependency from ImpUnit_Promise module,
 // while class being tested can be accessed from global scope as "::Promise".
 
-@include "github:electricimp/Rocky/Rocky.class.nut"
+@include __PATH__+"/Core.nut"
 
 // RockyRouteHandlers
 // Tests for Rocky.Route.authorize, Rocky.Route.onUnauthorized, Rocky.Route.onTimeout, Rocky.Route.onException
-class RockyRouteHandlers extends ImpTestCase {
+class RockyRouteHandlers extends Core {
 
-    @include __PATH__+"/Core.nut"
     @include __PATH__+"/CoreHandlers.nut"
 
     auth = null;
@@ -109,19 +108,6 @@ class RockyRouteHandlers extends ImpTestCase {
             "timeout": true,
             "onTimeoutRoute": throwException.bindenv(this).bindenv(this),
             "onExceptionRoute": onException.bindenv(this),
-            "statuscode": 500
-        });
-    }
-
-    function testExceptionAtOnException() {
-        return createTest({
-            "signature": "/testExceptionAtOnException",
-            "onAuthorizeRoute": onAuthorize.bindenv(this),
-            "onUnauthorizedRoute": throwException.bindenv(this),
-            "onExceptionRoute": throwExceptionOnException.bindenv(this),
-            "headers": {
-                "Authorization": authWrong
-            },
             "statuscode": 500
         });
     }

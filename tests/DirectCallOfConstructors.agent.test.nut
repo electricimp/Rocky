@@ -24,13 +24,12 @@
 // "Promise" symbol is injected dependency from ImpUnit_Promise module,
 // while class being tested can be accessed from global scope as "::Promise".
 
-@include "github:electricimp/Rocky/Rocky.class.nut"
+@include __PATH__+"/Core.nut"
 
 // DirectCallOfConstructors
 // Tests for direct call of Rocky.Route(callback), Rocky.Context(_req, _res)
-class DirectCallOfConstructors extends ImpTestCase {
+class DirectCallOfConstructors extends Core {
 
-    @include __PATH__+"/Core.nut"
     @include __PATH__+"/CoreHandlers.nut"
 
     values = null;

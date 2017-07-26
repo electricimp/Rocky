@@ -24,13 +24,12 @@
 // "Promise" symbol is injected dependency from ImpUnit_Promise module,
 // while class being tested can be accessed from global scope as "::Promise".
 
-@include "github:electricimp/Rocky/Rocky.class.nut"
+@include __PATH__+"/Core.nut"
 
 // RockyHandlers
 // Tests for Rocky.authorize, Rocky.onUnauthorized, Rocky.onTimeout, Rocky.onException, Rocky.onNotFound
-class RockyHandlers extends ImpTestCase {
+class RockyHandlers extends Core {
 
-    @include __PATH__+"/Core.nut"
     @include __PATH__+"/CoreHandlers.nut"
 
     auth = null;
@@ -128,16 +127,6 @@ class RockyHandlers extends ImpTestCase {
             "signatureOverride": "/testNotFoundIDontExist",
             "onNotFound": throwException.bindenv(this),
             "onException": onException.bindenv(this),
-            "statuscode": 500
-        });
-    }
-
-    function testExceptionAtOnException() {
-        return createTest({
-            "signature": "/testExceptionAtOnException",
-            "signatureOverride": "/testExceptionAtExceptionIDontExist",
-            "onNotFound": throwException.bindenv(this),
-            "onException": throwExceptionOnException.bindenv(this),
             "statuscode": 500
         });
     }

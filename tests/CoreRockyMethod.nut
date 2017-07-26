@@ -24,14 +24,13 @@
 // "Promise" symbol is injected dependency from ImpUnit_Promise module,
 // while class being tested can be accessed from global scope as "::Promise".
 
-@include "github:electricimp/Rocky/Rocky.class.nut"
+@include __PATH__+"/Core.nut"
 
 // CoreRockyMethod
 // Tests for Rocky.on, Rocky.VERB
 // Should be included into file, witch contains getVerb() function
-class CoreRockyMethod extends ImpTestCase {
+class CoreRockyMethod extends Core {
 
-    @include __PATH__+"/Core.nut"
     @include __PATH__+"/CoreHandlers.nut"
   
     withoutBody = false;

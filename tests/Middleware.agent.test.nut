@@ -24,13 +24,12 @@
 // "Promise" symbol is injected dependency from ImpUnit_Promise module,
 // while class being tested can be accessed from global scope as "::Promise".
 
-@include "github:electricimp/Rocky/Rocky.class.nut"
+@include __PATH__+"/Core.nut"
 
 // Middleware
 // Tests for Middleware, Rocky.use, Rocky.Route.use, CORS Requests
-class Middleware extends ImpTestCase {
+class Middleware extends Core {
 
-    @include __PATH__+"/Core.nut"
     @include __PATH__+"/CoreHandlers.nut"
 
     auth = null;

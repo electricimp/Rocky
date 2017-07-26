@@ -24,13 +24,12 @@
 // "Promise" symbol is injected dependency from ImpUnit_Promise module,
 // while class being tested can be accessed from global scope as "::Promise".
 
-@include "github:electricimp/Rocky/Rocky.class.nut"
+@include __PATH__+"/Core.nut"
 
 // RockyContext
 // Tests for Rocky.Context.send, Rocky.Context.getHeader, Rocky.Context.req, Rocky.Context.path, Rocky.Context.matches, Rocky.Context.isbrowser
-class RockyContext extends ImpTestCase {
+class RockyContext extends Core {
 
-    @include __PATH__+"/Core.nut"
     @include __PATH__+"/CoreHandlers.nut"
 
     function testSend() {
