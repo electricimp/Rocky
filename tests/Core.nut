@@ -24,8 +24,6 @@
 // "Promise" symbol is injected dependency from ImpUnit_Promise module,
 // while class being tested can be accessed from global scope as "::Promise".
 
-@include "github:electricimp/Rocky/Rocky.class.nut"
-
 class Core extends ImpTestCase {
     
     // Default params for createTest function

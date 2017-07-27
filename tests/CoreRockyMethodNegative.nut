@@ -26,7 +26,6 @@
 
 @include __PATH__+"/Core.nut"
 
-
 // CoreRockyMethod
 // Tests for Rocky.on, Rocky.VERB
 // Should be included into file, witch contains getVerb() function

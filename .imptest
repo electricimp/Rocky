@@ -3,8 +3,8 @@
     "devices": [
         "237d606938a609ee" /* F */
     ],
-    "agentFile": false,
-    "deviceFile": false,
+    "agentFile": "Rocky.class.nut",
+    "deviceFile": "Rocky.class.nut",
     "stopOnFailure": false,
     "timeout": 30,
     "tests": [
