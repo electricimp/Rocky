@@ -142,14 +142,15 @@ class CoreRockyMethod extends Core {
         }, "application/x-www-form-urlencoded", "contentType=body");
     }
 
-    function testContentTypeMultipart() {
-        local body = "--ff4ed67396bc8e1d6dbf19d65b6c6348\r\nContent-Disposition: form-data; name=\"contentType\"\r\n\r\nbody\r\n--ff4ed67396bc8e1d6dbf19d65b6c6348\r\nContent-Disposition: form-data; name=\"tmp\"\r\n\r\nContent file\r\n--ff4ed67396bc8e1d6dbf19d65b6c6348";
-        return contentType({
-            "contentType": "contentType", 
-            "content-type": "multipart/form-data; boundary=--ff4ed67396bc8e1d6dbf19d65b6c6348",
-            "Content-Length": body.len()
-        }, "multipart/form-data; boundary=--ff4ed67396bc8e1d6dbf19d65b6c6348", body);
-    }
+    // issue: https://github.com/electricimp/Rocky/issues/22
+    //function testContentTypeMultipart() {
+    //    local body = "--ff4ed67396bc8e1d6dbf19d65b6c6348\r\nContent-Disposition: form-data; name=\"contentType\"\r\n\r\nbody\r\n--ff4ed67396bc8e1d6dbf19d65b6c6348\r\nContent-Disposition: form-data; name=\"tmp\"\r\n\r\nContent file\r\n--ff4ed67396bc8e1d6dbf19d65b6c6348";
+    //    return contentType({
+    //        "contentType": "contentType", 
+    //        "content-type": "multipart/form-data; boundary=--ff4ed67396bc8e1d6dbf19d65b6c6348",
+    //        "Content-Length": body.len()
+    //    }, "multipart/form-data; boundary=--ff4ed67396bc8e1d6dbf19d65b6c6348", body);
+    //}
 
     function contentType(headers, contentType, body) {
         local params = {

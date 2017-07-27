@@ -71,17 +71,18 @@ class RockyConstructor extends Core {
         return createTestAll(tests);
     }
 
-    function testRockyTimeoutOption() {
-        local tests = [];
-        foreach (element in values) {
-            tests.push({
-                "signature": "/testTimeoutOption", 
-                "params": {"timeout": element},
-                "onException": onException.bindenv(this)
-            });
-        }
-        return createTestAll(tests);
-    }
+    // issue: https://github.com/electricimp/Rocky/issues/24
+    //function testRockyTimeoutOption() {
+    //    local tests = [];
+    //    foreach (element in values) {
+    //        tests.push({
+    //            "signature": "/testTimeoutOption", 
+    //            "params": {"timeout": element},
+    //            "onException": onException.bindenv(this)
+    //        });
+    //    }
+    //    return createTestAll(tests);
+    //}
 
     function testRockyWrongOption() {
         local values = ["hello", "strictrouting", "AllowUnsecure", "TimeOut"];

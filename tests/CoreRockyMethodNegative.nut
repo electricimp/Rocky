@@ -114,21 +114,22 @@ class CoreRockyMethod extends Core {
         return createTestAll(tests, "negative");
     }
 
-    function testInvalidParamsTimeout() {
-        local tests = [];
-        foreach (element in values) {
-            if (element == null) {
-                continue;
-            }
-            tests.push({
-                "signature": "/testInvalidParamsTimeout",
-                "method": getVerb(),
-                "timeoutRoute": element,
-                "onException": (withoutBody ? function(context, ex){
-                    context.send(500);
-                } : onException).bindenv(this)
-            });
-        }
-        return createTestAll(tests, "negative");
-    }
+    // issue: https://github.com/electricimp/Rocky/issues/23
+    //function testInvalidParamsTimeout() {
+    //    local tests = [];
+    //    foreach (element in values) {
+    //        if (element == null) {
+    //            continue;
+    //        }
+    //        tests.push({
+    //            "signature": "/testInvalidParamsTimeout",
+    //            "method": getVerb(),
+    //            "timeoutRoute": element,
+    //            "onException": (withoutBody ? function(context, ex){
+    //                context.send(500);
+    //            } : onException).bindenv(this)
+    //        });
+    //    }
+    //    return createTestAll(tests, "negative");
+    //}
 }
