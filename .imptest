@@ -1,7 +1,7 @@
 {
-    "modelId": "qryDFGlK1tUd" /* B */,
+    "modelId": "pSrGKzgpqPO6" /* A */,
     "devices": [
-        "237d606938a609ee" /* F */
+        "23236c6938a609ee" /* B */
     ],
     "agentFile": "Rocky.class.nut",
     "deviceFile": "Rocky.class.nut",
