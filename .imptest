@@ -1,0 +1,14 @@
+{
+    "modelId": "pSrGKzgpqPO6" /* A */,
+    "devices": [
+        "23236c6938a609ee" /* B */
+    ],
+    "agentFile": "Rocky.class.nut",
+    "deviceFile": "Rocky.class.nut",
+    "stopOnFailure": false,
+    "timeout": 30,
+    "tests": [
+        "*.test.nut",
+        "tests/**/*.test.nut"
+    ]
+}
