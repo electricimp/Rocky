@@ -8,6 +8,13 @@ class Rocky {
 
     static PARSE_ERROR = "Error parsing body of request";
     static INVALID_MIDDLEWARE_ERR = "Middleware must be a function, or array of functions";
+    static INVALID_TIMEOUT_ERR = "Timeout must be a number";
+    static INVALID_ALLOW_UNSECURE_ERR = "allowUnsecure must be a boolean";
+    static INVALID_STRICT_ROUTING_ERR = "strictRouting must be a boolean";
+    static INVALID_ACCESS_CONTROL_ERR = "accessControl must be a boolean";
+    static INVALID_VERB_ERR = "Verb must be a string";
+    static INVALID_SIGNATURE_ERR = "Signature must be a string";
+    static INVALID_CALLBACK_ERR = "Callback must be a string";
 
     // Route handlers, event handers, and middleware
     _handlers = null;
@@ -20,10 +27,30 @@ class Rocky {
 
     constructor(settings = {}) {
         // Initialize settings
-        if ("timeout" in settings) _timeout = settings.timeout;
-        if ("allowUnsecure" in settings) _allowUnsecure = settings.allowUnsecure;
-        if ("strictRouting" in settings) _strictRouting = settings.strictRouting;
-        if ("accessControl" in settings) _accessControl = settings.accessControl;
+        if ("timeout" in settings) {
+            if (!(typeof settings.timeout in ["integer", "float"])) {
+                throw INVALID_TIMEOUT_ERR;
+            }
+            _timeout = settings.timeout;
+        }
+        if ("allowUnsecure" in settings) {
+            if (!(typeof settings.allowUnsecure == "bool")) {
+                throw INVALID_ALLOW_UNSECURE_ERR;
+            }
+            _allowUnsecure = settings.allowUnsecure;
+        }
+        if ("strictRouting" in settings) {
+            if (!(typeof settings.strictRouting == "bool")) {
+                throw INVALID_STRICT_ROUTING_ERR;
+            }
+            _strictRouting = settings.strictRouting;
+        }
+        if ("accessControl" in settings) {
+            if (!(typeof settings.accessControl == "bool")) {
+                throw INVALID_ACCESS_CONTROL_ERR;
+            }
+            _accessControl = settings.accessControl;
+        }
 
         // Inititalize handlers & middleware
         _handlers = {
@@ -53,7 +80,23 @@ class Rocky {
     // Requests
     function on(verb, signature, callback, timeout=null) {
         //Check timeout and set it to class-level timeout if not specified for route
-        if (timeout == null) timeout = this._timeout;
+        if (timeout == null) {
+            timeout = this._timeout;
+        }
+
+        // Validate paramters
+        if (!(typeof verb in ["string"])) {
+            throw INVALID_VERB_ERR;
+        }
+        if (!(typeof signature in ["string"])) {
+            throw INVALID_SIGNATURE_ERR;
+        }
+        if (!(typeof callback in ["function"])) {
+            throw INVALID_CALLBACK_ERR;
+        }
+        if (!(typeof timeout in ["integer", "float"])) {
+            throw INVALID_TIMEOUT_ERR;
+        }
 
         // Register this signature and verb against the callback
         verb = verb.toupper();
