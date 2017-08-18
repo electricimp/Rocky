@@ -28,7 +28,7 @@ class Rocky {
     constructor(settings = {}) {
         // Initialize settings
         if ("timeout" in settings) {
-            if (!(typeof settings.timeout in ["integer", "float"])) {
+            if (["integer", "float"].find(typeof settings.timeout) == null) {
                 throw INVALID_TIMEOUT_ERR;
             }
             _timeout = settings.timeout;
@@ -85,16 +85,16 @@ class Rocky {
         }
 
         // Validate paramters
-        if (!(typeof verb in ["string"])) {
+        if (!(typeof verb == "string")) {
             throw INVALID_VERB_ERR;
         }
-        if (!(typeof signature in ["string"])) {
+        if (!(typeof signature == "string")) {
             throw INVALID_SIGNATURE_ERR;
         }
-        if (!(typeof callback in ["function"])) {
+        if (!(typeof callback == "function")) {
             throw INVALID_CALLBACK_ERR;
         }
-        if (!(typeof timeout in ["integer", "float"])) {
+        if (["integer", "float"].find(typeof timeout) == null) {
             throw INVALID_TIMEOUT_ERR;
         }
 
