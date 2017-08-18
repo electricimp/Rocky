@@ -583,12 +583,20 @@ class Rocky.Context {
 
     // Closes ALL contexts
     static function sendToAll(statuscode, response, headers = {}) {
-        // Send to all active contexts
-        foreach (context in _contexts) {
+        local contextsArray = [];
+    
+        // Convert table into array because when contexts are removed
+        // from the table while looping through it, it causes issues
+        foreach (key, context in _contexts) {
+            contextsArray.push(context);
+        }
+        
+        // Loop over array and send to all active contexts
+        for (local i = contextsArray.len() - 1; i >= 0; i--) {
             foreach (key, value in headers) {
-                context.setHeader(key, value);
+                contextsArray[i].setHeader(key, value);
             }
-            context.send(statuscode, response);
+            contextsArray[i].send(statuscode, response);
         }
     }
 
