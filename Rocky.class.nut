@@ -254,22 +254,29 @@ class Rocky {
                 throw "No boundary found in content-type";
             }
 
+            // Remove all carriage returns from string (to support either \r\n or \n for linebreaks)
+            local body = "";
+            local bodyLines = split(req.body, "\r");
+            foreach (i, line in bodyLines) {
+                body += line;
+            }
+
             local bindex = -1;
             do {
-                bindex = req.body.find("--" + boundary + "\r\n", bindex+1);
+                bindex = body.find("--" + boundary + "\n", bindex+1);
 
                 if (bindex != null) {
                     // Locate all the parts
                     local hstart = bindex + boundary.len() + 4;
-                    local nstart = req.body.find("name=\"", hstart) + 6;
-                    local nfinish = req.body.find("\"", nstart);
-                    local fnstart = req.body.find("filename=\"", hstart) + 10;
-                    local fnfinish = req.body.find("\"", fnstart);
-                    local bstart = req.body.find("\r\n\r\n", hstart) + 4;
-                    local fstart = req.body.find("\r\n--" + boundary, bstart);
+                    local nstart = body.find("name=\"", hstart) + 6;
+                    local nfinish = body.find("\"", nstart);
+                    local fnstart = body.find("filename=\"", hstart) + 10; // TODO: error here
+                    local fnfinish = body.find("\"", fnstart);
+                    local bstart = body.find("\n\n", hstart) + 4;
+                    local fstart = body.find("\n--" + boundary, bstart);
 
                     // Pull out the parts as strings
-                    local headers = req.body.slice(hstart, bstart);
+                    local headers = body.slice(hstart, bstart);
                     local name = null;
                     local filename = null;
                     local type = null;
@@ -289,11 +296,12 @@ class Rocky {
                             }
                         }
                     }
-                    local data = req.body.slice(bstart, fstart);
+                    local data = body.slice(bstart, fstart);
                     local part = { "name": name, "filename": filename, "data": data, "content-type": type };
 
                     parts.push(part);
                 }
+
             } while (bindex != null);
 
             return parts;
@@ -592,13 +600,13 @@ class Rocky.Context {
     // Closes ALL contexts
     static function sendToAll(statuscode, response, headers = {}) {
         local contextsArray = [];
-    
+
         // Convert table into array because when contexts are removed
         // from the table while looping through it, it causes issues
         foreach (key, context in _contexts) {
             contextsArray.push(context);
         }
-        
+
         // Loop over array and send to all active contexts
         for (local i = contextsArray.len() - 1; i >= 0; i--) {
             foreach (key, value in headers) {
