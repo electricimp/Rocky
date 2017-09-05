@@ -15,6 +15,9 @@ class Rocky {
     static INVALID_VERB_ERR = "Verb must be a string";
     static INVALID_SIGNATURE_ERR = "Signature must be a string";
     static INVALID_CALLBACK_ERR = "Callback must be a string";
+    static ERROR_MISSING_NAME = "'name' is required for each file in multipart/form-data packet";
+    static ERROR_MISSING_BODY = "Body is required for each file in multipart/form-data packet (must be preceded by an empty line)";
+    static ERROR_MISSING_TYPE = "Content-Type is required for each file in multipart/form-data packet";
 
     // Route handlers, event handers, and middleware
     _handlers = null;
@@ -263,43 +266,71 @@ class Rocky {
 
             local bindex = -1;
             do {
+                try {
                 bindex = body.find("--" + boundary + "\n", bindex+1);
 
                 if (bindex != null) {
                     // Locate all the parts
-                    local hstart = bindex + boundary.len() + 4;
-                    local nstart = body.find("name=\"", hstart) + 6;
-                    local nfinish = body.find("\"", nstart);
-                    local fnstart = body.find("filename=\"", hstart) + 10; // TODO: error here
-                    local fnfinish = body.find("\"", fnstart);
-                    local bstart = body.find("\n\n", hstart) + 4;
-                    local fstart = body.find("\n--" + boundary, bstart);
+                    local hstart = bindex + boundary.len() + 3;
+                    local hfinish = body.find("\n\n", hstart);
+                    local header = body.slice(hstart, hfinish);
+                    /*
+                    local hstart = body.find("Content-Disposition:", bindex + boundary.len()) + 20;
+                    local hfinish = body.find("\n", hstart);
+                    local header = body.slice(hstart, hfinish);
+                    */
 
-                    // Pull out the parts as strings
-                    local headers = body.slice(hstart, bstart);
+                    // Get the name
                     local name = null;
-                    local filename = null;
-                    local type = null;
-                    foreach (header in split(headers, ";\n")) {
-                        local kv = split(header, ":=");
-                        if (kv.len() == 2) {
-                            switch (strip(kv[0]).tolower()) {
-                                case "name":
-                                    name = strip(kv[1]).slice(1, -1);
-                                    break;
-                                case "filename":
-                                    filename = strip(kv[1]).slice(1, -1);
-                                    break;
-                                case "content-type":
-                                    type = strip(kv[1]);
-                                    break;
-                            }
-                        }
+                    local nstart = header.find(" name=\"");
+                    if (nstart != null) {
+                        nstart += 7;
+                        local nfinish = header.find("\"", nstart);
+                        name = header.slice(nstart, nfinish);
+                    } else {
+                        throw ERROR_MISSING_NAME;
                     }
-                    local data = body.slice(bstart, fstart);
-                    local part = { "name": name, "filename": filename, "data": data, "content-type": type };
+
+                    // Get the filename
+                    local filename = null;
+                    local fnstart = header.find(" filename=\"");
+                    if (fnstart != null) {
+                        fnstart += 11;
+                        local fnfinish = header.find("\"", fnstart);
+                        filename = header.slice(fnstart, fnfinish);
+                    }
+
+                    // Get the Content-Type
+                    local type = null;
+                    local tstart = header.find("Content-Type:");
+                    if (tstart != null) {
+                        tstart += 13;
+                        local tfinish = header.find("\n", tstart);
+                        if (tfinish == null) tfinish = header.len();
+                        type = strip(header.slice(tstart, tfinish));
+                    } else {
+                        throw ERROR_MISSING_TYPE;
+                    }
+
+                    // Get the body
+                    local data = null;
+                    local bstart = body.find("\n\n", hstart);
+                    if (bstart != null) {
+                        bstart += 2;
+                        local bfinish = body.find("\n--" + boundary, bstart);
+                        data = body.slice(bstart, bfinish);
+                    } else {
+                        throw ERROR_MISSING_BODY;
+                    }
+
+                    local part = { "name": name, "data": data, "content-type": type };
+                    if (filename != null) part.filename <- filename;
 
                     parts.push(part);
+                }
+                } catch (e) {
+                    server.error(e);
+                    throw e;
                 }
 
             } while (bindex != null);
