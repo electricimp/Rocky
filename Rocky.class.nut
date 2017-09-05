@@ -242,9 +242,17 @@ class Rocky {
         if (contentType.find("multipart/form-data;") == 0) {
             local parts = [];
 
-            // _parse_body is wrapped in a try/catch.. so we just let this fail
-            // when the content-type isn't long enough (and on other issues).
-            local boundary = contentType.slice(30);
+            // Find the boundary in the contentType
+            local boundary;
+            local findString = regexp(@"boundary([ ]*)=");
+            local match = findString.search(contentType);
+
+            if (match) {
+                boundary = contentType.slice(match.end);
+                boundary = strip(boundary);
+            } else {
+                throw "No boundary found in content-type";
+            }
 
             local bindex = -1;
             do {
