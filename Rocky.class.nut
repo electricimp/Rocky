@@ -266,7 +266,6 @@ class Rocky {
 
             local bindex = -1;
             do {
-                try {
                 bindex = body.find("--" + boundary + "\n", bindex+1);
 
                 if (bindex != null) {
@@ -274,11 +273,6 @@ class Rocky {
                     local hstart = bindex + boundary.len() + 3;
                     local hfinish = body.find("\n\n", hstart);
                     local header = body.slice(hstart, hfinish);
-                    /*
-                    local hstart = body.find("Content-Disposition:", bindex + boundary.len()) + 20;
-                    local hfinish = body.find("\n", hstart);
-                    local header = body.slice(hstart, hfinish);
-                    */
 
                     // Get the name
                     local name = null;
@@ -327,10 +321,6 @@ class Rocky {
                     if (filename != null) part.filename <- filename;
 
                     parts.push(part);
-                }
-                } catch (e) {
-                    server.error(e);
-                    throw e;
                 }
 
             } while (bindex != null);
