@@ -8,6 +8,16 @@ class Rocky {
 
     static PARSE_ERROR = "Error parsing body of request";
     static INVALID_MIDDLEWARE_ERR = "Middleware must be a function, or array of functions";
+    static INVALID_TIMEOUT_ERR = "Timeout must be a number";
+    static INVALID_ALLOW_UNSECURE_ERR = "allowUnsecure must be a boolean";
+    static INVALID_STRICT_ROUTING_ERR = "strictRouting must be a boolean";
+    static INVALID_ACCESS_CONTROL_ERR = "accessControl must be a boolean";
+    static INVALID_VERB_ERR = "Verb must be a string";
+    static INVALID_SIGNATURE_ERR = "Signature must be a string";
+    static INVALID_CALLBACK_ERR = "Callback must be a string";
+    static ERROR_MISSING_NAME = "'name' is required for each file in multipart/form-data packet";
+    static ERROR_MISSING_BODY = "Body is required for each file in multipart/form-data packet (must be preceded by an empty line)";
+    static ERROR_MISSING_TYPE = "Content-Type is required for each file in multipart/form-data packet";
 
     // Route handlers, event handers, and middleware
     _handlers = null;
@@ -20,10 +30,30 @@ class Rocky {
 
     constructor(settings = {}) {
         // Initialize settings
-        if ("timeout" in settings) _timeout = settings.timeout;
-        if ("allowUnsecure" in settings) _allowUnsecure = settings.allowUnsecure;
-        if ("strictRouting" in settings) _strictRouting = settings.strictRouting;
-        if ("accessControl" in settings) _accessControl = settings.accessControl;
+        if ("timeout" in settings) {
+            if (["integer", "float"].find(typeof settings.timeout) == null) {
+                throw INVALID_TIMEOUT_ERR;
+            }
+            _timeout = settings.timeout;
+        }
+        if ("allowUnsecure" in settings) {
+            if (!(typeof settings.allowUnsecure == "bool")) {
+                throw INVALID_ALLOW_UNSECURE_ERR;
+            }
+            _allowUnsecure = settings.allowUnsecure;
+        }
+        if ("strictRouting" in settings) {
+            if (!(typeof settings.strictRouting == "bool")) {
+                throw INVALID_STRICT_ROUTING_ERR;
+            }
+            _strictRouting = settings.strictRouting;
+        }
+        if ("accessControl" in settings) {
+            if (!(typeof settings.accessControl == "bool")) {
+                throw INVALID_ACCESS_CONTROL_ERR;
+            }
+            _accessControl = settings.accessControl;
+        }
 
         // Inititalize handlers & middleware
         _handlers = {
@@ -53,7 +83,23 @@ class Rocky {
     // Requests
     function on(verb, signature, callback, timeout=null) {
         //Check timeout and set it to class-level timeout if not specified for route
-        if (timeout == null) timeout = this._timeout;
+        if (timeout == null) {
+            timeout = this._timeout;
+        }
+
+        // Validate paramters
+        if (!(typeof verb == "string")) {
+            throw INVALID_VERB_ERR;
+        }
+        if (!(typeof signature == "string")) {
+            throw INVALID_SIGNATURE_ERR;
+        }
+        if (!(typeof callback == "function")) {
+            throw INVALID_CALLBACK_ERR;
+        }
+        if (["integer", "float"].find(typeof timeout) == null) {
+            throw INVALID_TIMEOUT_ERR;
+        }
 
         // Register this signature and verb against the callback
         verb = verb.toupper();
@@ -199,50 +245,84 @@ class Rocky {
         if (contentType.find("multipart/form-data;") == 0) {
             local parts = [];
 
-            // _parse_body is wrapped in a try/catch.. so we just let this fail
-            // when the content-type isn't long enough (and on other issues).
-            local boundary = contentType.slice(30);
+            // Find the boundary in the contentType
+            local boundary;
+            local findString = regexp(@"boundary([ ]*)=");
+            local match = findString.search(contentType);
+
+            if (match) {
+                boundary = contentType.slice(match.end);
+                boundary = strip(boundary);
+            } else {
+                throw "No boundary found in content-type";
+            }
+
+            // Remove all carriage returns from string (to support either \r\n or \n for linebreaks)
+            local body = "";
+            local bodyLines = split(req.body, "\r");
+            foreach (i, line in bodyLines) {
+                body += line;
+            }
 
             local bindex = -1;
             do {
-                bindex = req.body.find("--" + boundary + "\r\n", bindex+1);
+                bindex = body.find("--" + boundary + "\n", bindex+1);
 
                 if (bindex != null) {
                     // Locate all the parts
-                    local hstart = bindex + boundary.len() + 4;
-                    local nstart = req.body.find("name=\"", hstart) + 6;
-                    local nfinish = req.body.find("\"", nstart);
-                    local fnstart = req.body.find("filename=\"", hstart) + 10;
-                    local fnfinish = req.body.find("\"", fnstart);
-                    local bstart = req.body.find("\r\n\r\n", hstart) + 4;
-                    local fstart = req.body.find("\r\n--" + boundary, bstart);
+                    local hstart = bindex + boundary.len() + 3;
+                    local hfinish = body.find("\n\n", hstart);
+                    local header = body.slice(hstart, hfinish);
 
-                    // Pull out the parts as strings
-                    local headers = req.body.slice(hstart, bstart);
+                    // Get the name
                     local name = null;
-                    local filename = null;
-                    local type = null;
-                    foreach (header in split(headers, ";\n")) {
-                        local kv = split(header, ":=");
-                        if (kv.len() == 2) {
-                            switch (strip(kv[0]).tolower()) {
-                                case "name":
-                                    name = strip(kv[1]).slice(1, -1);
-                                    break;
-                                case "filename":
-                                    filename = strip(kv[1]).slice(1, -1);
-                                    break;
-                                case "content-type":
-                                    type = strip(kv[1]);
-                                    break;
-                            }
-                        }
+                    local nstart = header.find(" name=\"");
+                    if (nstart != null) {
+                        nstart += 7;
+                        local nfinish = header.find("\"", nstart);
+                        name = header.slice(nstart, nfinish);
+                    } else {
+                        throw ERROR_MISSING_NAME;
                     }
-                    local data = req.body.slice(bstart, fstart);
-                    local part = { "name": name, "filename": filename, "data": data, "content-type": type };
+
+                    // Get the filename
+                    local filename = null;
+                    local fnstart = header.find(" filename=\"");
+                    if (fnstart != null) {
+                        fnstart += 11;
+                        local fnfinish = header.find("\"", fnstart);
+                        filename = header.slice(fnstart, fnfinish);
+                    }
+
+                    // Get the Content-Type
+                    local type = null;
+                    local tstart = header.find("Content-Type:");
+                    if (tstart != null) {
+                        tstart += 13;
+                        local tfinish = header.find("\n", tstart);
+                        if (tfinish == null) tfinish = header.len();
+                        type = strip(header.slice(tstart, tfinish));
+                    } else {
+                        throw ERROR_MISSING_TYPE;
+                    }
+
+                    // Get the body
+                    local data = null;
+                    local bstart = body.find("\n\n", hstart);
+                    if (bstart != null) {
+                        bstart += 2;
+                        local bfinish = body.find("\n--" + boundary, bstart);
+                        data = body.slice(bstart, bfinish);
+                    } else {
+                        throw ERROR_MISSING_BODY;
+                    }
+
+                    local part = { "name": name, "data": data, "content-type": type };
+                    if (filename != null) part.filename <- filename;
 
                     parts.push(part);
                 }
+
             } while (bindex != null);
 
             return parts;
@@ -540,12 +620,20 @@ class Rocky.Context {
 
     // Closes ALL contexts
     static function sendToAll(statuscode, response, headers = {}) {
-        // Send to all active contexts
-        foreach (context in _contexts) {
+        local contextsArray = [];
+
+        // Convert table into array because when contexts are removed
+        // from the table while looping through it, it causes issues
+        foreach (key, context in _contexts) {
+            contextsArray.push(context);
+        }
+
+        // Loop over array and send to all active contexts
+        for (local i = contextsArray.len() - 1; i >= 0; i--) {
             foreach (key, value in headers) {
-                context.setHeader(key, value);
+                contextsArray[i].setHeader(key, value);
             }
-            context.send(statuscode, response);
+            contextsArray[i].send(statuscode, response);
         }
     }
 

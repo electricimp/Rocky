@@ -443,7 +443,7 @@ app.get("/", function(context) {
 
 The *context.req* property is a representation of the HTTP Request table. All fields available in the [HTTP Request Table](http://electricimp.com/docs/api/http/onrequest) can be accessed through this property.
 
-If a `content-type` header was included in the request, and the content type was set to `application/json`, `application/x-www-form-urlencoded` or `multipart/form-data;` the *body* property of the request will be a table representing the parsed data, rather than the raw body. In the following example, we assume requests made to POST */users* include a `content-type` header:
+If a `content-type` header was included in the request, and the content type was set to `application/json` or `application/x-www-form-urlencoded` the *body* property of the request will be a table representing the parsed data, rather than the raw body. If the content type was set to `multipart/form-data;`, the *body* property will be an array of tables. In the following example, we assume requests made to POST */users* include a `content-type` header:
 
 ```squirrel
 app.post("/users", function(context) {
