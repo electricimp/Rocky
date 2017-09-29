@@ -4,7 +4,7 @@
         "23236c6938a609ee" /* B */
     ],
     "agentFile": "Rocky.class.nut",
-    "deviceFile": "Rocky.class.nut",
+    "deviceFile": false,
     "stopOnFailure": false,
     "timeout": 30,
     "tests": [
