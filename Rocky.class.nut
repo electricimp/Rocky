@@ -563,21 +563,15 @@ class Rocky.Context {
 
     // Closes ALL contexts
     static function sendToAll(statuscode, response, headers = {}) {
-        local contextsArray = [];
-
-        // Convert table into array because when contexts are removed
-        // from the table while looping through it, it causes issues
+        // Send to all active contexts
         foreach (key, context in _contexts) {
-            contextsArray.push(context);
-        }
-
-        // Loop over array and send to all active contexts
-        for (local i = contextsArray.len() - 1; i >= 0; i--) {
-            foreach (key, value in headers) {
-                contextsArray[i].setHeader(key, value);
+            foreach (k, header in headers) {
+                context.setHeader(k, header);
             }
-            contextsArray[i].send(statuscode, response);
+            context._doSend(statuscode, response);
         }
+        // Remove all contexts after sending
+        _contexts.clear();
     }
 
     //-------------------- PUBLIC METHODS --------------------//
@@ -596,15 +590,37 @@ class Rocky.Context {
     }
 
     function send(code, message = null, forcejson = false) {
-        // Cancel the timeout
-        if (timer) {
-            imp.cancelwakeup(timer);
-            timer = null;
-        }
+        _doSend(code, message, forcejson);
 
         // Remove the context from the store
         if (id in _contexts) {
             delete Rocky.Context._contexts[id];
+        }
+    }
+
+    function setTimeout(timeout, callback) {
+        // Set the timeout timer
+        if (timer) imp.cancelwakeup(timer);
+        timer = imp.wakeup(timeout, function() {
+            if (callback == null) {
+                send(502, "Timeout");
+            } else {
+                callback(this);
+            }
+        }.bindenv(this))
+    }
+
+    function isComplete() {
+        return sent;
+    }
+
+    //-------------------- PRIVATE METHODS --------------------//
+
+    function _doSend(code, message = null, forcejson = false) {
+        // Cancel the timeout
+        if (timer) {
+            imp.cancelwakeup(timer);
+            timer = null;
         }
 
         // Has this context been closed already?
@@ -637,19 +653,4 @@ class Rocky.Context {
         sent = true;
     }
 
-    function setTimeout(timeout, callback) {
-        // Set the timeout timer
-        if (timer) imp.cancelwakeup(timer);
-        timer = imp.wakeup(timeout, function() {
-            if (callback == null) {
-                send(502, "Timeout");
-            } else {
-                callback(this);
-            }
-        }.bindenv(this))
-    }
-
-    function isComplete() {
-        return sent;
-    }
 }
