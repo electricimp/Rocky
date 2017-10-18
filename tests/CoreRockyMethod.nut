@@ -224,12 +224,28 @@ GIF89a.............,...........D..;
                         }
                         if (!withoutBody) {
                             tmp = context.req.body;
-                            if ("table" != type(tmp)) {
-                                throw "Wrong type of context.req.body " + type(tmp) + ", should be table";
-                            } else if (!("contentType" in tmp) || "body" != tmp["contentType"]) {
-                                info("---------actual body----------");
-                                deepLog(tmp);
-                                throw "Wrong context.req.body";
+                            // Check if the contentType is multipart/form-data
+                            if (contentType.find("multipart/form-data") != null) {
+                                if ("array" != type(tmp)) {
+                                    throw "Wrong type of context.req.body " + type(tmp) + ", should be array";
+                                } else {
+                                    foreach (item in tmp) {
+                                        if (!("contentType" in item) || "body" != item["contentType"]) {
+                                            info("---------actual body----------");
+                                            deepLog(item);
+                                            throw "Wrong context.req.body";
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Any contentType other than multipart/form-data
+                                if ("table" != type(tmp)) {
+                                    throw "Wrong type of context.req.body " + type(tmp) + ", should be table";
+                                } else if (!("contentType" in tmp) || "body" != tmp["contentType"]) {
+                                    info("---------actual body----------");
+                                    deepLog(tmp);
+                                    throw "Wrong context.req.body";
+                                }
                             }
                         }
                     } else {
