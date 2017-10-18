@@ -2,22 +2,11 @@
 // This file is licensed under the MIT License
 // http://opensource.org/licenses/MIT
 
+const ROCKY_PARSE_ERROR = "Error parsing body of request";
+
 class Rocky {
 
-    static VERSION = "2.0.0";
-
-    static PARSE_ERROR = "Error parsing body of request";
-    static INVALID_MIDDLEWARE_ERR = "Middleware must be a function, or array of functions";
-    static INVALID_TIMEOUT_ERR = "Timeout must be a number";
-    static INVALID_ALLOW_UNSECURE_ERR = "allowUnsecure must be a boolean";
-    static INVALID_STRICT_ROUTING_ERR = "strictRouting must be a boolean";
-    static INVALID_ACCESS_CONTROL_ERR = "accessControl must be a boolean";
-    static INVALID_VERB_ERR = "Verb must be a string";
-    static INVALID_SIGNATURE_ERR = "Signature must be a string";
-    static INVALID_CALLBACK_ERR = "Callback must be a string";
-    static ERROR_MISSING_NAME = "'name' is required for each file in multipart/form-data packet";
-    static ERROR_MISSING_BODY = "Body is required for each file in multipart/form-data packet (must be preceded by an empty line)";
-    static ERROR_MISSING_TYPE = "Content-Type is required for each file in multipart/form-data packet";
+    static VERSION = "2.0.1";
 
     // Route handlers, event handers, and middleware
     _handlers = null;
@@ -165,7 +154,7 @@ class Rocky {
             req.rawbody <- req.body;
             req.body = _parse_body(req);
         } catch (err) {
-            context.send(400, Rocky.PARSE_ERROR);
+            context.send(400, ROCKY_PARSE_ERROR);
             return;
         }
 
