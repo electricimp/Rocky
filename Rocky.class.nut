@@ -230,66 +230,43 @@ class Rocky {
                 body += line;
             }
 
-            local bindex = -1;
-            do {
-                bindex = body.find("--" + boundary + "\n", bindex+1);
+            // Find all boundaries in the body
+            local boundaries = [];
+            local bregex = regexp2(@"--" + boundary);
+            local bmatch = bregex.search(body);
+            while (bmatch != null) {
+                boundaries.push(bmatch);
+                bmatch = bregex.search(body, bmatch.begin+1);
+            }
 
-                if (bindex != null) {
-                    // Locate all the parts
-                    local hstart = bindex + boundary.len() + 3;
-                    local hfinish = body.find("\n\n", hstart);
-                    local header = body.slice(hstart, hfinish);
+            // Create array of parts
+            for (local i = 0; i < boundaries.len() - 1; i++) {
+                local part = body.slice(boundaries[i].end + 1, boundaries[i+1].begin);
 
-                    // Get the name
-                    local name = null;
-                    local nstart = header.find(" name=\"");
-                    if (nstart != null) {
-                        nstart += 7;
-                        local nfinish = header.find("\"", nstart);
-                        name = header.slice(nstart, nfinish);
-                    } else {
-                        throw ERROR_MISSING_NAME;
-                    }
+                local partSplit = regexp2("\n\n").search(part);
+                local header = part.slice(0, partSplit.begin);
+                local data = part.slice(partSplit.end, -1);
 
-                    // Get the filename
-                    local filename = null;
-                    local fnstart = header.find(" filename=\"");
-                    if (fnstart != null) {
-                        fnstart += 11;
-                        local fnfinish = header.find("\"", fnstart);
-                        filename = header.slice(fnstart, fnfinish);
-                    }
+                // Get the name
+                local name = null;
+                local nameCapture = regexp2(@"(^|\W)name\s*\=\s*""([^""]*)""").capture(header);
+                if (nameCapture != null) name = header.slice(nameCapture[2].begin, nameCapture[2].end);
 
-                    // Get the Content-Type
-                    local type = null;
-                    local tstart = header.find("Content-Type:");
-                    if (tstart != null) {
-                        tstart += 13;
-                        local tfinish = header.find("\n", tstart);
-                        if (tfinish == null) tfinish = header.len();
-                        type = strip(header.slice(tstart, tfinish));
-                    } else {
-                        throw ERROR_MISSING_TYPE;
-                    }
+                // Get the filename
+                local filename = null;
+                local filenameCapture = regexp2(@"(^|\W)filename\s*\=\s*""([^""]*)""").capture(header);
+                if (filenameCapture != null) filename = header.slice(filenameCapture[2].begin, filenameCapture[2].end);
 
-                    // Get the body
-                    local data = null;
-                    local bstart = body.find("\n\n", hstart);
-                    if (bstart != null) {
-                        bstart += 2;
-                        local bfinish = body.find("\n--" + boundary, bstart);
-                        data = body.slice(bstart, bfinish);
-                    } else {
-                        throw ERROR_MISSING_BODY;
-                    }
+                // Get the Content-Type
+                local type = null;
+                local typeCapture = regexp2(@"(^|\W)Content-Type:\s*([\S]*)\s*").capture(header);
+                if (typeCapture != null) type = header.slice(typeCapture[2].begin, typeCapture[2].end);
 
-                    local part = { "name": name, "data": data, "content-type": type };
-                    if (filename != null) part.filename <- filename;
+                local part = { "name": name, "data": data, "content-type": type };
+                if (filename != null) part.filename <- filename;
 
-                    parts.push(part);
-                }
-
-            } while (bindex != null);
+                parts.push(part);
+            }
 
             return parts;
         }
