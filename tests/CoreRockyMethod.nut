@@ -142,15 +142,73 @@ class CoreRockyMethod extends Core {
         }, "application/x-www-form-urlencoded", "contentType=body");
     }
 
-    // issue: https://github.com/electricimp/Rocky/issues/22
-    //function testContentTypeMultipart() {
-    //    local body = "--ff4ed67396bc8e1d6dbf19d65b6c6348\r\nContent-Disposition: form-data; name=\"contentType\"\r\n\r\nbody\r\n--ff4ed67396bc8e1d6dbf19d65b6c6348\r\nContent-Disposition: form-data; name=\"tmp\"\r\n\r\nContent file\r\n--ff4ed67396bc8e1d6dbf19d65b6c6348";
-    //    return contentType({
-    //        "contentType": "contentType", 
-    //        "content-type": "multipart/form-data; boundary=--ff4ed67396bc8e1d6dbf19d65b6c6348",
-    //        "Content-Length": body.len()
-    //    }, "multipart/form-data; boundary=--ff4ed67396bc8e1d6dbf19d65b6c6348", body);
-    //}
+    function testContentTypeMultipart() {
+        return Promise(function(resolve, reject) {
+            local app = Rocky();
+
+            local headers = {
+                "Content-Type": "multipart/form-data; boundary=----------287032381131322"
+            };
+
+// This is not indented because it's a string across multiple lines (indentation will become part of string)
+local bodyToSend = @"------------287032381131322
+Content-Disposition: form-data; filename=""r.gif""
+Content-Type: image/gif
+
+GIF87a.............,...........D..;
+------------287032381131322
+Content-Disposition: form-data; name=""life""; filename=""life.json""
+Content-Type: application/json
+
+{
+    ""The meaning of life"": 42
+}
+------------287032381131322
+Content-Disposition: form-data; name=""datafile""
+Content-Type: image/gif
+
+GIF89a.............,...........D..;
+------------287032381131322--";
+
+            local parsedBody = [
+                {
+                    "name": null,
+                    "filename": "r.gif",
+                    "content-type": "image/gif",
+                    "data": "GIF87a.............,...........D..;"
+                },
+                {
+                    "filename": "life.json",
+                    "name": "life",
+                    "content-type": "application/json",
+                    "data": "{\n    \"The meaning of life\": 42\n}",
+                },
+                {
+                    "content-type": "image/gif",
+                    "name": "datafile",
+                    "data": "GIF89a.............,...........D..;"
+                }
+            ];
+
+            try {
+                // Setup HTTP handler
+                app.on("POST", "/multipartTest", function(context) {
+                    // Check that parsed body is correct
+                    this.assertDeepEqual(parsedBody, context.req.body, "Multipart body was parsed incorrectly");
+                    context.send(200, {"message": "OK"});
+                }.bindenv(this));
+
+                // Send HTTP request
+                local req = http.request("POST", http.agenturl() + "/multipartTest", headers, bodyToSend);
+                req.sendasync(function(res) {
+                    this.assertTrue(res.statuscode == 200, "Response was " + res.statuscode + ", expected 200");
+                    resolve();
+                }.bindenv(this));
+            } catch(e) {
+                reject(e);
+            }
+        }.bindenv(this));
+    }
 
     function contentType(headers, contentType, body) {
         local params = {
@@ -166,12 +224,28 @@ class CoreRockyMethod extends Core {
                         }
                         if (!withoutBody) {
                             tmp = context.req.body;
-                            if ("table" != type(tmp)) {
-                                throw "Wrong type of context.req.body " + type(tmp) + ", should be table";
-                            } else if (!("contentType" in tmp) || "body" != tmp["contentType"]) {
-                                info("---------actual body----------");
-                                deepLog(tmp);
-                                throw "Wrong context.req.body";
+                            // Check if the contentType is multipart/form-data
+                            if (contentType.find("multipart/form-data") != null) {
+                                if ("array" != type(tmp)) {
+                                    throw "Wrong type of context.req.body " + type(tmp) + ", should be array";
+                                } else {
+                                    foreach (item in tmp) {
+                                        if (!("contentType" in item) || "body" != item["contentType"]) {
+                                            info("---------actual body----------");
+                                            deepLog(item);
+                                            throw "Wrong context.req.body";
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Any contentType other than multipart/form-data
+                                if ("table" != type(tmp)) {
+                                    throw "Wrong type of context.req.body " + type(tmp) + ", should be table";
+                                } else if (!("contentType" in tmp) || "body" != tmp["contentType"]) {
+                                    info("---------actual body----------");
+                                    deepLog(tmp);
+                                    throw "Wrong context.req.body";
+                                }
                             }
                         }
                     } else {

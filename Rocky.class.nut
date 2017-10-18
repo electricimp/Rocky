@@ -2,22 +2,11 @@
 // This file is licensed under the MIT License
 // http://opensource.org/licenses/MIT
 
+const ROCKY_PARSE_ERROR = "Error parsing body of request";
+
 class Rocky {
 
-    static VERSION = "2.0.0";
-
-    static PARSE_ERROR = "Error parsing body of request";
-    static INVALID_MIDDLEWARE_ERR = "Middleware must be a function, or array of functions";
-    static INVALID_TIMEOUT_ERR = "Timeout must be a number";
-    static INVALID_ALLOW_UNSECURE_ERR = "allowUnsecure must be a boolean";
-    static INVALID_STRICT_ROUTING_ERR = "strictRouting must be a boolean";
-    static INVALID_ACCESS_CONTROL_ERR = "accessControl must be a boolean";
-    static INVALID_VERB_ERR = "Verb must be a string";
-    static INVALID_SIGNATURE_ERR = "Signature must be a string";
-    static INVALID_CALLBACK_ERR = "Callback must be a string";
-    static ERROR_MISSING_NAME = "'name' is required for each file in multipart/form-data packet";
-    static ERROR_MISSING_BODY = "Body is required for each file in multipart/form-data packet (must be preceded by an empty line)";
-    static ERROR_MISSING_TYPE = "Content-Type is required for each file in multipart/form-data packet";
+    static VERSION = "2.0.1";
 
     // Route handlers, event handers, and middleware
     _handlers = null;
@@ -30,30 +19,10 @@ class Rocky {
 
     constructor(settings = {}) {
         // Initialize settings
-        if ("timeout" in settings) {
-            if (["integer", "float"].find(typeof settings.timeout) == null) {
-                throw INVALID_TIMEOUT_ERR;
-            }
-            _timeout = settings.timeout;
-        }
-        if ("allowUnsecure" in settings) {
-            if (!(typeof settings.allowUnsecure == "bool")) {
-                throw INVALID_ALLOW_UNSECURE_ERR;
-            }
-            _allowUnsecure = settings.allowUnsecure;
-        }
-        if ("strictRouting" in settings) {
-            if (!(typeof settings.strictRouting == "bool")) {
-                throw INVALID_STRICT_ROUTING_ERR;
-            }
-            _strictRouting = settings.strictRouting;
-        }
-        if ("accessControl" in settings) {
-            if (!(typeof settings.accessControl == "bool")) {
-                throw INVALID_ACCESS_CONTROL_ERR;
-            }
-            _accessControl = settings.accessControl;
-        }
+        if ("timeout" in settings) _timeout = settings.timeout;
+        if ("allowUnsecure" in settings) _allowUnsecure = settings.allowUnsecure;
+        if ("strictRouting" in settings) _strictRouting = settings.strictRouting;
+        if ("accessControl" in settings) _accessControl = settings.accessControl;
 
         // Inititalize handlers & middleware
         _handlers = {
@@ -85,20 +54,6 @@ class Rocky {
         //Check timeout and set it to class-level timeout if not specified for route
         if (timeout == null) {
             timeout = this._timeout;
-        }
-
-        // Validate paramters
-        if (!(typeof verb == "string")) {
-            throw INVALID_VERB_ERR;
-        }
-        if (!(typeof signature == "string")) {
-            throw INVALID_SIGNATURE_ERR;
-        }
-        if (!(typeof callback == "function")) {
-            throw INVALID_CALLBACK_ERR;
-        }
-        if (["integer", "float"].find(typeof timeout) == null) {
-            throw INVALID_TIMEOUT_ERR;
         }
 
         // Register this signature and verb against the callback
@@ -199,7 +154,7 @@ class Rocky {
             req.rawbody <- req.body;
             req.body = _parse_body(req);
         } catch (err) {
-            context.send(400, Rocky.PARSE_ERROR);
+            context.send(400, ROCKY_PARSE_ERROR);
             return;
         }
 
@@ -264,66 +219,43 @@ class Rocky {
                 body += line;
             }
 
-            local bindex = -1;
-            do {
-                bindex = body.find("--" + boundary + "\n", bindex+1);
+            // Find all boundaries in the body
+            local boundaries = [];
+            local bregex = regexp2(@"--" + boundary);
+            local bmatch = bregex.search(body);
+            while (bmatch != null) {
+                boundaries.push(bmatch);
+                bmatch = bregex.search(body, bmatch.begin+1);
+            }
 
-                if (bindex != null) {
-                    // Locate all the parts
-                    local hstart = bindex + boundary.len() + 3;
-                    local hfinish = body.find("\n\n", hstart);
-                    local header = body.slice(hstart, hfinish);
+            // Create array of parts
+            for (local i = 0; i < boundaries.len() - 1; i++) {
+                local part = body.slice(boundaries[i].end + 1, boundaries[i+1].begin);
 
-                    // Get the name
-                    local name = null;
-                    local nstart = header.find(" name=\"");
-                    if (nstart != null) {
-                        nstart += 7;
-                        local nfinish = header.find("\"", nstart);
-                        name = header.slice(nstart, nfinish);
-                    } else {
-                        throw ERROR_MISSING_NAME;
-                    }
+                local partSplit = regexp2("\n\n").search(part);
+                local header = part.slice(0, partSplit.begin);
+                local data = part.slice(partSplit.end, -1);
 
-                    // Get the filename
-                    local filename = null;
-                    local fnstart = header.find(" filename=\"");
-                    if (fnstart != null) {
-                        fnstart += 11;
-                        local fnfinish = header.find("\"", fnstart);
-                        filename = header.slice(fnstart, fnfinish);
-                    }
+                // Get the name
+                local name = null;
+                local nameCapture = regexp2(@"(^|\W)name\s*\=\s*""([^""]*)""").capture(header);
+                if (nameCapture != null) name = header.slice(nameCapture[2].begin, nameCapture[2].end);
 
-                    // Get the Content-Type
-                    local type = null;
-                    local tstart = header.find("Content-Type:");
-                    if (tstart != null) {
-                        tstart += 13;
-                        local tfinish = header.find("\n", tstart);
-                        if (tfinish == null) tfinish = header.len();
-                        type = strip(header.slice(tstart, tfinish));
-                    } else {
-                        throw ERROR_MISSING_TYPE;
-                    }
+                // Get the filename
+                local filename = null;
+                local filenameCapture = regexp2(@"(^|\W)filename\s*\=\s*""([^""]*)""").capture(header);
+                if (filenameCapture != null) filename = header.slice(filenameCapture[2].begin, filenameCapture[2].end);
 
-                    // Get the body
-                    local data = null;
-                    local bstart = body.find("\n\n", hstart);
-                    if (bstart != null) {
-                        bstart += 2;
-                        local bfinish = body.find("\n--" + boundary, bstart);
-                        data = body.slice(bstart, bfinish);
-                    } else {
-                        throw ERROR_MISSING_BODY;
-                    }
+                // Get the Content-Type
+                local type = null;
+                local typeCapture = regexp2(@"(^|\W)Content-Type:\s*([\S]*)\s*").capture(header);
+                if (typeCapture != null) type = header.slice(typeCapture[2].begin, typeCapture[2].end);
 
-                    local part = { "name": name, "data": data, "content-type": type };
-                    if (filename != null) part.filename <- filename;
+                local part = { "name": name, "data": data, "content-type": type };
+                if (filename != null) part.filename <- filename;
 
-                    parts.push(part);
-                }
-
-            } while (bindex != null);
+                parts.push(part);
+            }
 
             return parts;
         }
@@ -620,21 +552,15 @@ class Rocky.Context {
 
     // Closes ALL contexts
     static function sendToAll(statuscode, response, headers = {}) {
-        local contextsArray = [];
-
-        // Convert table into array because when contexts are removed
-        // from the table while looping through it, it causes issues
+        // Send to all active contexts
         foreach (key, context in _contexts) {
-            contextsArray.push(context);
-        }
-
-        // Loop over array and send to all active contexts
-        for (local i = contextsArray.len() - 1; i >= 0; i--) {
-            foreach (key, value in headers) {
-                contextsArray[i].setHeader(key, value);
+            foreach (k, header in headers) {
+                context.setHeader(k, header);
             }
-            contextsArray[i].send(statuscode, response);
+            context._doSend(statuscode, response);
         }
+        // Remove all contexts after sending
+        _contexts.clear();
     }
 
     //-------------------- PUBLIC METHODS --------------------//
@@ -653,15 +579,37 @@ class Rocky.Context {
     }
 
     function send(code, message = null, forcejson = false) {
-        // Cancel the timeout
-        if (timer) {
-            imp.cancelwakeup(timer);
-            timer = null;
-        }
+        _doSend(code, message, forcejson);
 
         // Remove the context from the store
         if (id in _contexts) {
             delete Rocky.Context._contexts[id];
+        }
+    }
+
+    function setTimeout(timeout, callback) {
+        // Set the timeout timer
+        if (timer) imp.cancelwakeup(timer);
+        timer = imp.wakeup(timeout, function() {
+            if (callback == null) {
+                send(502, "Timeout");
+            } else {
+                callback(this);
+            }
+        }.bindenv(this))
+    }
+
+    function isComplete() {
+        return sent;
+    }
+
+    //-------------------- PRIVATE METHODS --------------------//
+
+    function _doSend(code, message = null, forcejson = false) {
+        // Cancel the timeout
+        if (timer) {
+            imp.cancelwakeup(timer);
+            timer = null;
         }
 
         // Has this context been closed already?
@@ -694,19 +642,4 @@ class Rocky.Context {
         sent = true;
     }
 
-    function setTimeout(timeout, callback) {
-        // Set the timeout timer
-        if (timer) imp.cancelwakeup(timer);
-        timer = imp.wakeup(timeout, function() {
-            if (callback == null) {
-                send(502, "Timeout");
-            } else {
-                callback(this);
-            }
-        }.bindenv(this))
-    }
-
-    function isComplete() {
-        return sent;
-    }
 }
