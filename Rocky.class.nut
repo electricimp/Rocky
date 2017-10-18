@@ -30,30 +30,10 @@ class Rocky {
 
     constructor(settings = {}) {
         // Initialize settings
-        if ("timeout" in settings) {
-            if (["integer", "float"].find(typeof settings.timeout) == null) {
-                throw INVALID_TIMEOUT_ERR;
-            }
-            _timeout = settings.timeout;
-        }
-        if ("allowUnsecure" in settings) {
-            if (!(typeof settings.allowUnsecure == "bool")) {
-                throw INVALID_ALLOW_UNSECURE_ERR;
-            }
-            _allowUnsecure = settings.allowUnsecure;
-        }
-        if ("strictRouting" in settings) {
-            if (!(typeof settings.strictRouting == "bool")) {
-                throw INVALID_STRICT_ROUTING_ERR;
-            }
-            _strictRouting = settings.strictRouting;
-        }
-        if ("accessControl" in settings) {
-            if (!(typeof settings.accessControl == "bool")) {
-                throw INVALID_ACCESS_CONTROL_ERR;
-            }
-            _accessControl = settings.accessControl;
-        }
+        if ("timeout" in settings) _timeout = settings.timeout;
+        if ("allowUnsecure" in settings) _allowUnsecure = settings.allowUnsecure;
+        if ("strictRouting" in settings) _strictRouting = settings.strictRouting;
+        if ("accessControl" in settings) _accessControl = settings.accessControl;
 
         // Inititalize handlers & middleware
         _handlers = {
@@ -85,20 +65,6 @@ class Rocky {
         //Check timeout and set it to class-level timeout if not specified for route
         if (timeout == null) {
             timeout = this._timeout;
-        }
-
-        // Validate paramters
-        if (!(typeof verb == "string")) {
-            throw INVALID_VERB_ERR;
-        }
-        if (!(typeof signature == "string")) {
-            throw INVALID_SIGNATURE_ERR;
-        }
-        if (!(typeof callback == "function")) {
-            throw INVALID_CALLBACK_ERR;
-        }
-        if (["integer", "float"].find(typeof timeout) == null) {
-            throw INVALID_TIMEOUT_ERR;
         }
 
         // Register this signature and verb against the callback
