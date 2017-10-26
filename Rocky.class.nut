@@ -230,33 +230,41 @@ class Rocky {
 
             // Create array of parts
             for (local i = 0; i < boundaries.len() - 1; i++) {
+                // Extract one part from the request
                 local part = body.slice(boundaries[i].end + 1, boundaries[i+1].begin);
 
+                // Split the part into headers and body
                 local partSplit = regexp2("\n\n").search(part);
                 local header = part.slice(0, partSplit.begin);
                 local data = part.slice(partSplit.end, -1);
 
-                // Get the name
-                local name = null;
-                local nameCapture = regexp2(@"(^|\W)name\s*\=\s*""([^""]*)""").capture(header);
-                if (nameCapture != null) name = header.slice(nameCapture[2].begin, nameCapture[2].end);
+                // Create table to store the parsed content of the part
+                local parsedPart = {};
+                parsedPart.name <- null;
+                parsedPart.data <- data;
 
-                // Get the filename
-                local filename = null;
-                local filenameCapture = regexp2(@"(^|\W)filename\s*\=\s*""([^""]*)""").capture(header);
-                if (filenameCapture != null) filename = header.slice(filenameCapture[2].begin, filenameCapture[2].end);
+                // Extract each individual header and store in parsedPart
+                local keyValueRegex = regexp2(@"(^|\W)(\S+)\s*[=:]\s*(""[^""]*""|\S*)");
+                local keyValueCapture = keyValueRegex.capture(header);
+                while (keyValueCapture != null) {
+                    // Extract key and value for the header
+                    local key = header.slice(keyValueCapture[2].begin, keyValueCapture[2].end);
+                    local val = header.slice(keyValueCapture[3].begin, keyValueCapture[3].end);
+                    // Remove any quotations
+                    if (val[0] == '"') {
+                        val = val.slice(1, -1);
+                    }
+                    // Save the header in parsedPart
+                    parsedPart[key] <- val;
 
-                // Get the Content-Type
-                local type = null;
-                local typeCapture = regexp2(@"(^|\W)Content-Type:\s*([\S]*)\s*").capture(header);
-                if (typeCapture != null) type = header.slice(typeCapture[2].begin, typeCapture[2].end);
+                    keyValueCapture = keyValueRegex.capture(header, keyValueCapture[0].end);
+                }
 
-                local part = { "name": name, "data": data, "content-type": type };
-                if (filename != null) part.filename <- filename;
-
-                parts.push(part);
+                // Add the parsed part to the array of parts
+                parts.push(parsedPart);
             }
 
+            // Return the array of parts
             return parts;
         }
 
