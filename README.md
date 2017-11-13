@@ -1,5 +1,7 @@
 # Rocky 2.0.0
 
+[![Build Status](https://api.travis-ci.org/electricimp/Rocky.svg?branch=master)](https://travis-ci.org/electricimp/Rocky)
+
 Rocky is an framework for building powerful and scalable APIs for your imp-powered products. The Rocky library consists of the following classes:
 
 - [Rocky](#rocky) &mdash; The core application, used to create routes, set default handlers, etc.
@@ -791,3 +793,4 @@ app.use([ customCORSMiddleware ]);
 ## License
 
 Rocky is licensed under [MIT License](https://github.com/electricimp/Rocky/blob/master/LICENSE).
+
