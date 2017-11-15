@@ -38,82 +38,37 @@ class RockyConstructor extends Core {
         values = [null, true, 0, -1, 1, 13.37, "String", [1, 2], {"counter": "this"}, blob(64), function(){}];
     }
 
-    function testRockyAccessControlOptionPositive() {
+    function testRockyAccessControlOption() {
         local tests = [];
         foreach (element in values) {
-            if (typeof element == "bool") {
-                tests.push({
-                    "signature": "/testAccessControlOption", 
-                    "params": {"accessControl": element}
-                });
-            }
+            tests.push({
+                "signature": "/testAccessControlOption", 
+                "params": {"accessControl": element}
+            });
         }
-        return createTestAll(tests, "positive");
+        return createTestAll(tests);
     }
 
-    function testRockyAccessControlOptionNegative() {
+    function testRockyAllowUnsecureOption() {
         local tests = [];
         foreach (element in values) {
-            if (typeof element != "bool") {
-                tests.push({
-                    "signature": "/testAccessControlOption", 
-                    "params": {"accessControl": element}
-                });
-            }
+            tests.push({
+                "signature": "/testAllowUnsecureOption", 
+                "params": {"allowUnsecure": element}
+            });
         }
-        return createTestAll(tests, "negative");
+        return createTestAll(tests);
     }
 
-    function testRockyAllowUnsecureOptionPositive() {
+    function testRockyStrictRoutingOption() {
         local tests = [];
         foreach (element in values) {
-            if (typeof element == "bool") {
-                tests.push({
-                    "signature": "/testAllowUnsecureOption", 
-                    "params": {"allowUnsecure": element}
-                });
-            }
+            tests.push({
+                "signature": "/testStrictRoutingOption", 
+                "params": {"strictRouting": element}
+            });
         }
-        return createTestAll(tests, "positive");
-    }
-
-    function testRockyAllowUnsecureOptionNegative() {
-        local tests = [];
-        foreach (element in values) {
-            if (typeof element != "bool") {
-                tests.push({
-                    "signature": "/testAllowUnsecureOption", 
-                    "params": {"allowUnsecure": element}
-                });
-            }
-        }
-        return createTestAll(tests, "negative");
-    }
-
-    function testRockyStrictRoutingOptionPostive() {
-        local tests = [];
-        foreach (element in values) {
-            if (typeof element == "bool") {
-                tests.push({
-                    "signature": "/testStrictRoutingOption", 
-                    "params": {"strictRouting": element}
-                });
-            }
-        }
-        return createTestAll(tests, "positive");
-    }
-
-    function testRockyStrictRoutingOptionNegative() {
-        local tests = [];
-        foreach (element in values) {
-            if (typeof element != "bool") {
-                tests.push({
-                    "signature": "/testStrictRoutingOption", 
-                    "params": {"strictRouting": element}
-                });
-            }
-        }
-        return createTestAll(tests, "negative");
+        return createTestAll(tests);
     }
 
     // issue: https://github.com/electricimp/Rocky/issues/24
