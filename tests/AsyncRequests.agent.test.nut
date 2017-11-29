@@ -59,20 +59,20 @@ class AsyncRequests extends Core {
     }
 
     // issue: https://github.com/electricimp/Rocky/issues/21
-    //function testMultipleAsyncRequestsWithSendToAll() {
-    //    info("This test will take a couple of seconds");
-    //    imp.wakeup(10, function() {
-    //        completeMultipleAsyncRequestsWithSendToAll();
-    //    }.bindenv(this));
-    //    return createTest({
-    //        "signature": "/testMultipleAsyncRequestsWithSendToAll",
-    //        "params": {
-    //            "timeout": 20
-    //        },
-    //        "numberOfRequests": 5,
-    //        "callback": asyncCallbackMultiple.bindenv(this)
-    //    });
-    //}
+    function testMultipleAsyncRequestsWithSendToAll() {
+        info("This test will take a couple of seconds");
+        imp.wakeup(10, function() {
+            completeMultipleAsyncRequestsWithSendToAll();
+        }.bindenv(this));
+        return createTest({
+            "signature": "/testMultipleAsyncRequestsWithSendToAll",
+            "params": {
+                "timeout": 20
+            },
+            "numberOfRequests": 5,
+            "callback": asyncCallbackMultiple.bindenv(this)
+        });
+    }
 
     function testInvalidContexts() {
         return createTest({

@@ -2,12 +2,11 @@
 // This file is licensed under the MIT License
 // http://opensource.org/licenses/MIT
 
+const ROCKY_PARSE_ERROR = "Error parsing body of request";
+
 class Rocky {
 
-    static VERSION = "2.0.0";
-
-    static PARSE_ERROR = "Error parsing body of request";
-    static INVALID_MIDDLEWARE_ERR = "Middleware must be a function, or array of functions";
+    static VERSION = "2.0.1";
 
     // Route handlers, event handers, and middleware
     _handlers = null;
@@ -53,7 +52,9 @@ class Rocky {
     // Requests
     function on(verb, signature, callback, timeout=null) {
         //Check timeout and set it to class-level timeout if not specified for route
-        if (timeout == null) timeout = this._timeout;
+        if (timeout == null) {
+            timeout = this._timeout;
+        }
 
         // Register this signature and verb against the callback
         verb = verb.toupper();
@@ -153,7 +154,7 @@ class Rocky {
             req.rawbody <- req.body;
             req.body = _parse_body(req);
         } catch (err) {
-            context.send(400, Rocky.PARSE_ERROR);
+            context.send(400, ROCKY_PARSE_ERROR);
             return;
         }
 
@@ -199,52 +200,71 @@ class Rocky {
         if (contentType.find("multipart/form-data;") == 0) {
             local parts = [];
 
-            // _parse_body is wrapped in a try/catch.. so we just let this fail
-            // when the content-type isn't long enough (and on other issues).
-            local boundary = contentType.slice(30);
+            // Find the boundary in the contentType
+            local boundary;
+            local findString = regexp(@"boundary([ ]*)=");
+            local match = findString.search(contentType);
 
-            local bindex = -1;
-            do {
-                bindex = req.body.find("--" + boundary + "\r\n", bindex+1);
+            if (match) {
+                boundary = contentType.slice(match.end);
+                boundary = strip(boundary);
+            } else {
+                throw "No boundary found in content-type";
+            }
 
-                if (bindex != null) {
-                    // Locate all the parts
-                    local hstart = bindex + boundary.len() + 4;
-                    local nstart = req.body.find("name=\"", hstart) + 6;
-                    local nfinish = req.body.find("\"", nstart);
-                    local fnstart = req.body.find("filename=\"", hstart) + 10;
-                    local fnfinish = req.body.find("\"", fnstart);
-                    local bstart = req.body.find("\r\n\r\n", hstart) + 4;
-                    local fstart = req.body.find("\r\n--" + boundary, bstart);
+            // Remove all carriage returns from string (to support either \r\n or \n for linebreaks)
+            local body = "";
+            local bodyLines = split(req.body, "\r");
+            foreach (i, line in bodyLines) {
+                body += line;
+            }
 
-                    // Pull out the parts as strings
-                    local headers = req.body.slice(hstart, bstart);
-                    local name = null;
-                    local filename = null;
-                    local type = null;
-                    foreach (header in split(headers, ";\n")) {
-                        local kv = split(header, ":=");
-                        if (kv.len() == 2) {
-                            switch (strip(kv[0]).tolower()) {
-                                case "name":
-                                    name = strip(kv[1]).slice(1, -1);
-                                    break;
-                                case "filename":
-                                    filename = strip(kv[1]).slice(1, -1);
-                                    break;
-                                case "content-type":
-                                    type = strip(kv[1]);
-                                    break;
-                            }
-                        }
+            // Find all boundaries in the body
+            local boundaries = [];
+            local bregex = regexp2(@"--" + boundary);
+            local bmatch = bregex.search(body);
+            while (bmatch != null) {
+                boundaries.push(bmatch);
+                bmatch = bregex.search(body, bmatch.begin+1);
+            }
+
+            // Create array of parts
+            for (local i = 0; i < boundaries.len() - 1; i++) {
+                // Extract one part from the request
+                local part = body.slice(boundaries[i].end + 1, boundaries[i+1].begin);
+
+                // Split the part into headers and body
+                local partSplit = regexp2("\n\n").search(part);
+                local header = part.slice(0, partSplit.begin);
+                local data = part.slice(partSplit.end, -1);
+
+                // Create table to store the parsed content of the part
+                local parsedPart = {};
+                parsedPart.name <- null;
+                parsedPart.data <- data;
+
+                // Extract each individual header and store in parsedPart
+                local keyValueRegex = regexp2(@"(^|\W)(\S+)\s*[=:]\s*(""[^""]*""|\S*)");
+                local keyValueCapture = keyValueRegex.capture(header);
+                while (keyValueCapture != null) {
+                    // Extract key and value for the header
+                    local key = header.slice(keyValueCapture[2].begin, keyValueCapture[2].end);
+                    local val = header.slice(keyValueCapture[3].begin, keyValueCapture[3].end);
+                    // Remove any quotations
+                    if (val[0] == '"') {
+                        val = val.slice(1, -1);
                     }
-                    local data = req.body.slice(bstart, fstart);
-                    local part = { "name": name, "filename": filename, "data": data, "content-type": type };
+                    // Save the header in parsedPart
+                    parsedPart[key] <- val;
 
-                    parts.push(part);
+                    keyValueCapture = keyValueRegex.capture(header, keyValueCapture[0].end);
                 }
-            } while (bindex != null);
 
+                // Add the parsed part to the array of parts
+                parts.push(parsedPart);
+            }
+
+            // Return the array of parts
             return parts;
         }
 
@@ -541,12 +561,14 @@ class Rocky.Context {
     // Closes ALL contexts
     static function sendToAll(statuscode, response, headers = {}) {
         // Send to all active contexts
-        foreach (context in _contexts) {
-            foreach (key, value in headers) {
-                context.setHeader(key, value);
+        foreach (key, context in _contexts) {
+            foreach (k, header in headers) {
+                context.setHeader(k, header);
             }
-            context.send(statuscode, response);
+            context._doSend(statuscode, response);
         }
+        // Remove all contexts after sending
+        _contexts.clear();
     }
 
     //-------------------- PUBLIC METHODS --------------------//
@@ -565,15 +587,37 @@ class Rocky.Context {
     }
 
     function send(code, message = null, forcejson = false) {
-        // Cancel the timeout
-        if (timer) {
-            imp.cancelwakeup(timer);
-            timer = null;
-        }
+        _doSend(code, message, forcejson);
 
         // Remove the context from the store
         if (id in _contexts) {
             delete Rocky.Context._contexts[id];
+        }
+    }
+
+    function setTimeout(timeout, callback) {
+        // Set the timeout timer
+        if (timer) imp.cancelwakeup(timer);
+        timer = imp.wakeup(timeout, function() {
+            if (callback == null) {
+                send(502, "Timeout");
+            } else {
+                callback(this);
+            }
+        }.bindenv(this))
+    }
+
+    function isComplete() {
+        return sent;
+    }
+
+    //-------------------- PRIVATE METHODS --------------------//
+
+    function _doSend(code, message = null, forcejson = false) {
+        // Cancel the timeout
+        if (timer) {
+            imp.cancelwakeup(timer);
+            timer = null;
         }
 
         // Has this context been closed already?
@@ -606,19 +650,4 @@ class Rocky.Context {
         sent = true;
     }
 
-    function setTimeout(timeout, callback) {
-        // Set the timeout timer
-        if (timer) imp.cancelwakeup(timer);
-        timer = imp.wakeup(timeout, function() {
-            if (callback == null) {
-                send(502, "Timeout");
-            } else {
-                callback(this);
-            }
-        }.bindenv(this))
-    }
-
-    function isComplete() {
-        return sent;
-    }
 }
