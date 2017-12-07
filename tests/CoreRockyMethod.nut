@@ -174,17 +174,20 @@ GIF89a.............,...........D..;
                 {
                     "name": null,
                     "filename": "r.gif",
-                    "content-type": "image/gif",
+                    "Content-Type": "image/gif",
+                    "Content-Disposition": "form-data;",
                     "data": "GIF87a.............,...........D..;"
                 },
                 {
                     "filename": "life.json",
                     "name": "life",
-                    "content-type": "application/json",
+                    "Content-Type": "application/json",
+                    "Content-Disposition": "form-data;",
                     "data": "{\n    \"The meaning of life\": 42\n}",
                 },
                 {
-                    "content-type": "image/gif",
+                    "Content-Type": "image/gif",
+                    "Content-Disposition": "form-data;",
                     "name": "datafile",
                     "data": "GIF89a.............,...........D..;"
                 }
