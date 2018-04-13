@@ -1,0 +1,12 @@
+{
+  "deviceGroupId": "99d1fc41-1f11-a99f-2e59-40797a0f63b8",
+  "timeout": 30,
+  "stopOnFail": false,
+  "allowDisconnect": false,
+  "builderCache": false,
+  "testFiles": [
+    "*.test.nut",
+    "tests/**/*.test.nut"
+  ],
+  "agentFile": "Rocky.class.nut"
+}
