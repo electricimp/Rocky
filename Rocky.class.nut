@@ -6,7 +6,7 @@ const ROCKY_PARSE_ERROR = "Error parsing body of request";
 
 class Rocky {
 
-    static VERSION = "2.0.1";
+    static VERSION = "2.0.2";
 
     // Route handlers, event handers, and middleware
     _handlers = null;
@@ -368,7 +368,7 @@ class Rocky {
     }
 
     function _defaultTimeoutHandler(context) {
-        context.send(500, format("Agent Request Timedout after %i seconds.", _timeout));
+        context.send(500, format("Agent Request timed out after %i seconds.", _timeout));
     }
 
     function _defaultExceptionHandler(context, ex) {

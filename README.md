@@ -1,4 +1,4 @@
-# Rocky 2.0.1
+# Rocky 2.0.2
 
 [![Build Status](https://api.travis-ci.org/electricimp/Rocky.svg?branch=master)](https://travis-ci.org/electricimp/Rocky)
 
@@ -44,7 +44,7 @@ Rocky is an framework for building powerful and scalable APIs for your imp-power
 Calling the Rocky constructor creates a new Rocky application. An optional *options* table can be passed into the constructor to override default behaviours:
 
 ```squirrel
-#require "rocky.class.nut:2.0.1"
+#require "rocky.class.nut:2.0.2"
 
 app <- Rocky()
 ```
