@@ -1,8 +1,10 @@
 # Rocky 2.0.2
 
-[![Build Status](https://api.travis-ci.org/electricimp/Rocky.svg?branch=master)](https://travis-ci.org/electricimp/Rocky)
-
 Rocky is an framework for building powerful and scalable APIs for your imp-powered products. The Rocky library consists of the following classes:
+
+![Build Status](https://cse-ci.electricimp.com/app/rest/builds/buildType:(id:Rocky_BuildAndTest)/statusIcon)
+
+---
 
 - [Rocky](#rocky) &mdash; The core application, used to create routes, set default handlers, etc.
   - [Rocky.get](#rocky_verb) &mdash; Creates a handler for GET requests that match the specified signature.
