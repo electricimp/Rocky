@@ -267,7 +267,7 @@ class Core extends ImpTestCase {
                     for (local i = 0; i < numberOfRequests; i++) {
                         local method = params.methodOverride != null ? params.methodOverride : params.method;
                         if (typeof method == "string") {
-                            method = method.tolower();
+                            method = method.toupper();
                         }
                         local signature = typeof params.signatureOverride == "string" ? params.signatureOverride : params.signature;
                         local req = http.request(
