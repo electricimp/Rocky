@@ -1,10 +1,10 @@
 # Rocky 3.0.0 #
 
-Rocky is an framework for building powerful and scalable APIs for your imp-powered products. The Rocky library consists of the following classes:
+Rocky is an framework for building powerful and scalable APIs for your imp-powered products.
 
 ![Build Status](https://cse-ci.electricimp.com/app/rest/builds/buildType:(id:Rocky_BuildAndTest)/statusIcon)
 
----
+The Rocky library consists of the following classes:
 
 - [Rocky](#rocky) &mdash; The core application, used to create routes, set default handlers, etc.
   - [Rocky.get](#rocky_verb) &mdash; Creates a handler for GET requests that match the specified signature.
@@ -52,21 +52,21 @@ Please see [*Rocky.init()*](#rocky_init) for more information.
 
 <div id="rocky"><h3>Constructor: Rocky(<i>[options]</i>)</h3></div>
 
-Calling the Rocky constructor creates a new Rocky instance. An optional *options* table can be passed into the constructor to override default behaviors:
+Calling the Rocky constructor creates a new Rocky instance. An [optional table](#options) may be passed into the constructor to override default settings.
 
 ```squirrel
 #require "rocky.agent.lib.nut:3.0.0"
 
-app <- Rocky()
+app <- Rocky();
 ```
 
 #### options ####
 
 A table containing any of the following keys may be passed into the Rocky constructor to modify the default behavior:
 
-- *accessControl* &mdash; Modifies whether or not Rocky will automatically add `Access-Control` headers to the response object.
-- *allowUnsecure* &mdash; Modifies whether or not Rocky will accept HTTP requests. Rocky defaults to HTTPS.
-- *strictRouting* &mdash; Enables or disables strict routing. By default, Rocky will consider `/foo` and `/foo/` as identical paths.
+- *accessControl* &mdash; Modifies whether Rocky will automatically add `Access-Control` headers to the response object.
+- *allowUnsecure* &mdash; Modifies whether Rocky will accept HTTP requests. Rocky defaults to HTTPS.
+- *strictRouting* &mdash; Enables or disables strict routing. By default, Rocky will consider `/foo` and `/foo/` to be identical paths.
 - *timeout* &mdash; Modifies how long Rocky will hold onto a request before automatically executing the *onTimeout* handler.
 
 These are the default settings:
@@ -82,7 +82,9 @@ defaults <- {
 
 <div id="signatures"><h4>Signatures</h4></div>
 
-Signatures can either be fully qualified paths (`/led/state`) or include regular expressions (`/users/([^/]*)`). If the path is specified using a regular expression, any matches will be added to the [Rocky.Context](#context) object passed into the callback. In the following example, we capture the desired user’s username:
+Signatures can either be fully qualified paths (`/led/state`) or include regular expressions (`/users/([^/]*)`). If the path is specified using a regular expression, any matches will be added to the [Rocky.Context](#context) object passed into the callback.
+
+In the following example, we capture the desired user’s username:
 
 ```squirrel
 app.get("/users/([^/]*)", function(context) {
@@ -104,13 +106,15 @@ app.get("/users/([^/]*)", function(context) {
 
 <div id="rocky_verb"><h3>VERB(<i>signature, callback[, timeout]</i>)</h3></div>
 
-Rocky’s *VERB()* methods allow you to assign routes based on the specified verb and [signature](#signatures). The following *VERB*s are allowed:
+Rocky’s *VERB()* methods allow you to assign routes based on the specified verb and [signature](#signatures). The following *VERB()* methods are provided:
 
 - app.get(*signature, callback[, timeout]*)
 - app.put(*signature, callback[, timeout]*)
 - app.post(*signature, callback[, timeout]*)
 
-When a match is found on the verb (as specified by the method) and the signature, the callback function will be executed. The callback takes a [Rocky.Context](#context) object as a parameter. An optional route-level timeout can be specified. If no timeout is specified, the timeout set in [the constructor](#rocky) will be used.
+When a match is found on the verb (as specified by the method) and the signature, the callback function will be executed. The callback receives a [Rocky.Context](#context) object as its only argument.
+
+An optional route-level timeout can be specified. If no timeout is specified, the timeout set in [the constructor](#rocky) will be used.
 
 #### Parameters ####
 
@@ -122,7 +126,7 @@ When a match is found on the verb (as specified by the method) and the signature
 
 #### Returns ####
 
-Nothing.
+Rocky.Route &mdash; an instance representing the registered handler.
 
 #### Example ####
 
@@ -145,11 +149,11 @@ This method allows you to create APIs that use verbs other than GET, PUT or POST
 | *verb* | String | Yes | The HTTP request verb |
 | *signature* | String | Yes | A [signature](#signatures) defining the API endpoint |
 | *callback* | Function | Yes | A function to handle the request. It receives a [Rocky.Context](#context) object |
-| *timeout* | String | No | An optional request timeout in seconds. Default: 30s |
+| *timeout* | String | No | An optional request timeout in seconds. Default: the [constructor-set](#rocky) timeout |
 
 #### Returns ####
 
-Nothing.
+Rocky.Route &mdash; an instance representing the registered handler.
 
 #### Example ####
 
@@ -173,7 +177,7 @@ app.on("delete", "/users/([^/]*)", function(context) {
 
 <div id="rocky_use"><h3>use(<i>callback</i>)</h3></div>
 
-This method allows you to attach a request-processing middleware, or array of middlewares, to the global Rocky object. Please see [**Middleware**](#middleware) for more information.
+This method allows you to attach application-specific handlers, called “middleware”, or an array of middlewares, to the global Rocky object. Please see [**Middleware**](#middleware) for more information.
 
 #### Parameters ####
 
@@ -185,7 +189,7 @@ The callback function receives a [Rocky.Context](#context) object and a referenc
 
 #### Returns ####
 
-Nothing.
+*this* &mdash; the target Rocky instance.
 
 #### Example ####
 
@@ -228,7 +232,7 @@ The callback function takes a [Rocky.Context](#context) object as its single arg
 
 #### Returns ####
 
-Nothing.
+*this* &mdash; the target Rocky instance.
 
 #### Example ####
 
@@ -241,7 +245,7 @@ app.authorize(function(context) {
 
 <div id="rocky_onunauthorized"><h3>onUauthorized(<i>callback</i>)</h3></div>
 
-This method allows you to configure the default response to requests that fail the to be authorized via the callback registered with [*authorize()*](#rocky_authorize).
+This method allows you to configure the default response to requests that fail to be authorized via the callback registered with [*authorize()*](#rocky_authorize).
 
 #### Parameters ####
 
@@ -253,7 +257,7 @@ The callback takes a [Rocky.Context](#context) object as its single argument and
 
 #### Returns ####
 
-Nothing.
+*this* &mdash; the target Rocky instance.
 
 #### Example ####
 
@@ -277,7 +281,7 @@ The callback takes a [Rocky.Context](#context) object as its single argument and
 
 #### Returns ####
 
-Nothing.
+*this* &mdash; the target Rocky instance.
 
 #### Example ####
 
@@ -301,7 +305,7 @@ The callback takes a [Rocky.Context](#context) object as its single argument. It
 
 #### Returns ####
 
-Nothing.
+*this* &mdash; the target Rocky instance.
 
 #### Example ####
 
@@ -325,7 +329,7 @@ The callback takes a [Rocky.Context](#context) object and the exception as its a
 
 #### Returns ####
 
-Nothing.
+*this* &mdash; the target Rocky instance.
 
 #### Example ####
 
