@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Electric Imp
+// Copyright (c) 2015-19 Electric Imp
 // This file is licensed under the MIT License
 // http://opensource.org/licenses/MIT
 
@@ -6,7 +6,7 @@ const ROCKY_PARSE_ERROR = "Error parsing body of request";
 
 class Rocky {
 
-    static VERSION = "2.0.2";
+    static VERSION = "3.0.0";
 
     // Route handlers, event handers, and middleware
     _handlers = null;
@@ -18,6 +18,12 @@ class Rocky {
     _accessControl = true;
 
     constructor(settings = {}) {
+        // ADDED 3.0.0
+        // If this is the first instance, record its reference as a global
+        if (!("rocky_singleton_control" in getroottable())) {
+            ::rocky_singleton_control <- this;
+        }
+
         // Initialize settings
         if ("timeout" in settings) _timeout = settings.timeout;
         if ("allowUnsecure" in settings) _allowUnsecure = settings.allowUnsecure;
@@ -39,6 +45,16 @@ class Rocky {
     }
 
     //-------------------- STATIC METHODS --------------------//
+    static function init(options = null) {
+        // FROM 3.0.0
+        // Return a reference to the first Rocky instance, or to a new 'singleton' instance
+        if ("rocky_singleton_control" in getroottable()) {
+            return ::rocky_singleton_control;
+        } else {
+            return Rocky(options);
+        }
+    }
+
     static function getContext(id) {
         return Rocky.Context.get(id);
     }
