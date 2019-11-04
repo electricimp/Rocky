@@ -1,22 +1,40 @@
-// Copyright (c) 2015-19 Electric Imp
-// This file is licensed under the MIT License
-// http://opensource.org/licenses/MIT
-
 const ROCKY_PARSE_ERROR = "Error parsing body of request";
 
+/**
+ * This class allows you to define and operate an agent-served API.
+ *
+ * @copyright Electric Imp, Inc. 2015-19
+ * @license   MIT
+ *
+ * @class
+ *
+*/
 class Rocky {
 
     static VERSION = "3.0.0";
 
-    // Route handlers, event handers, and middleware
+    // ------------------ PRIVATE PROPERTIES ------------------//
+
+    // Route handlers, event handers and middleware
+    // are all stored in the same array
     _handlers = null;
 
-    // Settings:
+    // Settings
     _timeout = 10;
     _strictRouting = false;
     _allowUnsecure = false;
     _accessControl = true;
 
+    /**
+     * The Rocky constructor.
+     *
+     * @constructor
+     *
+     * @param {table} settings - Optional instance behavior settings. Default: see values above.
+     *
+     * @returns {object} A Rocky instance.
+     *
+    */
     constructor(settings = {}) {
         // ADDED 3.0.0
         // If this is the first instance, record its reference as a global
@@ -30,7 +48,7 @@ class Rocky {
         if ("strictRouting" in settings) _strictRouting = settings.strictRouting;
         if ("accessControl" in settings) _accessControl = settings.accessControl;
 
-        // Inititalize handlers & middleware
+        // Inititalize handlers and middleware
         _handlers = {
             authorize = _defaultAuthorizeHandler.bindenv(this),
             onUnauthorized = _defaultUnauthorizedHandler.bindenv(this),
@@ -40,102 +58,203 @@ class Rocky {
             middlewares = []
         };
 
-        // Bind the onrequest handler
+        // Bind the instance's onrequest handler
         http.onrequest(_onrequest.bindenv(this));
     }
 
     //-------------------- STATIC METHODS --------------------//
+
+    /**
+     * Create or return the Rocky singleton.
+     *
+     * @param {table} settings - Optional instance behavior settings. Default: see constructor.
+     *
+     * @returns {object} The Rocky singleton instance.
+     *
+    */
     static function init(options = null) {
         // FROM 3.0.0
-        // Return a reference to the first Rocky instance, or to a new 'singleton' instance
         if ("rocky_singleton_control" in getroottable()) {
+            // Return a reference to the first Rocky singleton if present...
             return ::rocky_singleton_control;
         } else {
+            // ...or create a new instance (which will become the singleton)
             return Rocky(options);
         }
     }
 
+    /**
+     * Get the specified Rocky context.
+     *
+     * @param {integer} id - The identifier of the desired context.
+     *
+     * @returns {object} The requested Rocky.Context instance.
+    */
     static function getContext(id) {
         return Rocky.Context.get(id);
     }
 
+    /**
+     * Send a response to to all currently active requests.
+     *
+     * @param {integer} statuscode - The response's HTTP status code.
+     * @param {any}     response   - The response body.
+     * @param {table}   headers    - Optional additional response headers. Default: no additional headers.
+     *
+    */
     static function sendToAll(statuscode, response, headers = {}) {
         Rocky.Context.sendToAll(statuscode, response, headers);
     }
 
     //-------------------- PUBLIC METHODS --------------------//
 
-    // Requests
-    function on(verb, signature, callback, timeout=null) {
-        //Check timeout and set it to class-level timeout if not specified for route
-        if (timeout == null) {
-            timeout = this._timeout;
-        }
+    // -------------------    REQUESTS    --------------------//
 
-        // Register this signature and verb against the callback
+    /**
+     * Register a handler for a non-standard (GET, PUT or POST) HTTP request.
+     *
+     * @param {string}   verb      - The HTTP request verb.
+     * @param {string}   signature - An endpoint path signature.
+     * @param {function} callback  - The handler that will process this kind of request.
+     * @param {integer}  timeout   - Optional timeout period in seconds. Default: the class-level value.
+     *
+     * @returns {object} A Rocky.Route instance for the handler.
+    */
+    function on(verb, signature, callback, timeout = null) {
+        // Check timeout and set it to class-level timeout if not specified for route
+        if (timeout == null) timeout = this._timeout;
+
+        // Register this verb and signature against the callback
         verb = verb.toupper();
-
         signature = signature.tolower();
         if (!(signature in _handlers)) _handlers[signature] <- {};
 
         local routeHandler = Rocky.Route(callback);
         routeHandler.setTimeout(timeout);
-
         _handlers[signature][verb] <- routeHandler;
-
         return routeHandler;
     }
 
+    /**
+     * Register a handler for an HTTP POST request.
+     *
+     * @param {string}   signature - An endpoint path signature.
+     * @param {function} callback  - The handler that will process the POST request.
+     * @param {integer}  timeout   - Optional timeout in seconds. Default: the class-level value.
+     *
+     * @returns {object} A Rocky.Route instance for the handler.
+    */
     function post(signature, callback, timeout=null) {
         return on("POST", signature, callback, timeout);
     }
 
+    /**
+     * Register a handler for an HTTP GET request.
+     *
+     * @param {string}   signature - An endpoint path signature.
+     * @param {function} callback  - The handler that will process the GET request.
+     * @param {integer}  timeout   - Optional timeout in seconds. Default: the class-level value.
+     *
+     * @returns {object} A Rocky.Route instance for the handler.
+    */
     function get(signature, callback, timeout=null) {
         return on("GET", signature, callback, timeout);
     }
 
+    /**
+     * Register a handler for an HTTP PUT request.
+     *
+     * @param {string}   signature - An endpoint path signature.
+     * @param {function} callback  - The handler that will process the PUT request.
+     * @param {integer}  timeout   - Optional timeout in seconds. Default: the class-level value.
+     *
+     * @returns {object} A Rocky.Route instance for the handler.
+    */
     function put(signature, callback, timeout=null) {
         return on("PUT", signature, callback, timeout);
     }
 
-    // Authorization
+    // ------------------- AUTHORIZATION -------------------//
+
+    /**
+     * Register a handler for request authorization.
+     *
+     * @param {Function} callback - The handler that will process authorization requests.
+     *
+     * @returns {object} The Rocky instance (this).
+    */
     function authorize(callback) {
         _handlers.authorize <- callback;
         return this;
     }
 
+    /**
+     * Register a handler for processing rejected requests.
+     *
+     * @param {function} callback - The handler that will process rejected requests.
+     *
+     * @returns {object} The Rocky instance (this).
+    */
     function onUnauthorized(callback) {
         _handlers.onUnauthorized <- callback;
         return this;
     }
 
-    // Events
-    function onTimeout(callback, t = null) {
-        if (t == null) t = _timeout;
+    // -------------------      EVENTS    -------------------//
 
+    /**
+     * Register a handler for timed out requests.
+     *
+     * @param {function} callback - The handler that will process request time-outs.
+     * @param {integer}  timeout  - Optional timeout in seconds. Default: the class-level value.
+     *
+     * @returns {object} The Rocky instance (this).
+    */
+    function onTimeout(callback, timeout = null) {
+        if (timeout == null) timeout = _timeout;
         _handlers.onTimeout <- callback;
-        _timeout = t;
+        _timeout = timeout;
         return this;
     }
 
+    /**
+     * Register a handler for requests asking for missing resources.
+     *
+     * @param {function} callback - The handler that will process 'resource not found' requests.
+     *
+     * @returns {object} The Rocky instance (this).
+    */
     function onNotFound(callback) {
         _handlers.onNotFound <- callback;
         return this;
     }
 
+    /**
+     * Register a handler for requests that triggered an exception.
+     *
+     * @param {function} callback - The handler that will process the failed request.
+     *
+     * @returns {object} The Rocky instance (this).
+    */
     function onException(callback) {
         _handlers.onException <- callback;
         return this;
     }
 
-    // Middlewares
+    // -------------------  MIDDLEWARES  -------------------//
+
+    /**
+     * Register one or more user-defined request-processing middlewares.
+     *
+     * @param {function/array} middlewares - One or more middleware function references.
+     *
+     * @returns {object} The Rocky instance (this).
+    */
     function use(middlewares) {
-        if(typeof middlewares == "function") {
+        if (typeof middlewares == "function") {
             _handlers.middlewares.push(middlewares);
         } else if (typeof _handlers.middlewares == "array") {
-            foreach(middleware in middlewares) {
-                use(middleware);
-            }
+            foreach (middleware in middlewares) use(middleware);
         } else {
             throw INVALID_MIDDLEWARE_ERR;
         }
@@ -144,14 +263,28 @@ class Rocky {
     }
 
     //-------------------- PRIVATE METHODS --------------------//
-    // Adds default access control headers
+]
+    /**
+     * Apply default headers to the specified reponse object.
+     *
+     * @param {object} res - An imp API HTTPResponse instance.
+     *
+     * @private
+    */
     function _addAccessControl(res) {
         res.header("Access-Control-Allow-Origin", "*")
         res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
         res.header("Access-Control-Allow-Methods", "POST, PUT, GET, OPTIONS");
     }
 
-    // The HTTP Request Handler
+    /**
+     * The core Rocky incoming HTTP request handler.
+     *
+     * @param {object} req - The source imp API HTTPRequest object.
+     * @param {object} res - An imp API HTTPResponse object primed to respond to the request.
+     *
+     * @private
+    */
     function _onrequest(req, res) {
         // Add access control headers if required
         if (_accessControl) _addAccessControl(res);
@@ -193,13 +326,22 @@ class Rocky {
             }
 
             context.setTimeout(timeout, onTimeout);
-            route.handler.execute(context, _handlers);
+            route.handlersute(context, _handlers);
         } else {
             // if we don't have a handler
             _handlers.onNotFound(context);
         }
     }
 
+    /**
+     * Parse an HTTP request's body based on the request's content type.
+     *
+     * @param {object} req - The source imp API HTTPRequest object.
+     *
+     * @returns {string} The parsed request body.
+     *
+     * @private
+    */
     function _parse_body(req) {
         local contentType = "content-type" in req.headers ? req.headers["content-type"] : "";
 
@@ -231,9 +373,7 @@ class Rocky {
             // Remove all carriage returns from string (to support either \r\n or \n for linebreaks)
             local body = "";
             local bodyLines = split(req.body, "\r");
-            foreach (i, line in bodyLines) {
-                body += line;
-            }
+            foreach (i, line in bodyLines) body += line;
 
             // Find all boundaries in the body
             local boundaries = [];
@@ -266,13 +406,12 @@ class Rocky {
                     // Extract key and value for the header
                     local key = header.slice(keyValueCapture[2].begin, keyValueCapture[2].end);
                     local val = header.slice(keyValueCapture[3].begin, keyValueCapture[3].end);
+
                     // Remove any quotations
-                    if (val[0] == '"') {
-                        val = val.slice(1, -1);
-                    }
+                    if (val[0] == '"') val = val.slice(1, -1);
+
                     // Save the header in parsedPart
                     parsedPart[key] <- val;
-
                     keyValueCapture = keyValueRegex.capture(header, keyValueCapture[0].end);
                 }
 
@@ -288,6 +427,15 @@ class Rocky {
         return req.body;
     }
 
+    /**
+     * Parse an HTTP request's authorization credentials.
+     *
+     * @param {object} context - The Rocky.Context containing the HTTPRequest.
+     *
+     * @returns {table} The parsed authorization credentials.
+     *
+     * @private
+    */
     function _parse_authorization(context) {
         if ("authorization" in context.req.headers) {
             local auth = split(context.req.headers.authorization, " ");
@@ -310,13 +458,23 @@ class Rocky {
         return { authType = "None", user = "", pass = "" };
     }
 
+    /**
+     * Separate out the components of a request's target path.
+     *
+     * @param {object} routeHandler - The Rocky.Route instance describing an endpoint.
+     * @param {string} path         - The endpoint path.
+     * @param {object} regexp       - An imp API Regexp instance. Default: null.
+     *
+     * @returns {table} The parsed path components.
+     *
+     * @private
+    */
     function _extract_parts(routeHandler, path, regexp = null) {
+        // Set up the table we will return
         local parts = { path = [], matches = [], handler = routeHandler };
 
         // Split the path into parts
-        foreach (part in split(path, "/")) {
-            parts.path.push(part);
-        }
+        foreach (part in split(path, "/")) parts.path.push(part);
 
         // Capture regular expression matches
         if (regexp != null) {
@@ -330,6 +488,15 @@ class Rocky {
         return parts;
     }
 
+    /**
+     * Process regular expression matches against an endpoint path.
+     *
+     * @param {object} req - The source imp API HTTPRequest object.
+     *
+     * @returns {table} The processed components, or null.
+     *
+     * @private
+    */
     function _handler_match(req) {
         local signature = req.path.tolower();
         local verb = req.method.toupper();
@@ -371,45 +538,111 @@ class Rocky {
     }
 
     //-------------------- DEFAULT HANDLERS --------------------//
+
+    /**
+     * Process authorization requests: just accept the request.
+     *
+     * @param {object} context - The Rocky.Context containing the request.
+     *
+     * @returns {Bool} Always authorized (true)
+     *
+     * @private
+    */
     function _defaultAuthorizeHandler(context) {
         return true;
     }
 
+    /**
+     * Process rejected requests: issue a 401 response.
+     *
+     * @param {object} context - The Rocky.Context containing the request.
+     *
+     * @private
+    */
     function _defaultUnauthorizedHandler(context) {
         context.send(401, "Unauthorized");
     }
 
+    /**
+     * Process requests to missing resources: issue a 404 response.
+     *
+     * @param {object} context - The Rocky.Context containing the request.
+     *
+     * @private
+    */
     function _defaultNotFoundHandler(context) {
         context.send(404, format("No handler for %s %s", context.req.method, context.req.path));
     }
 
+    /**
+     * Process timed out requests: issue a 500 response.
+     *
+     * @param {object} context - The Rocky.Context containing the request.
+     *
+     * @private
+    */
     function _defaultTimeoutHandler(context) {
         context.send(500, format("Agent Request timed out after %i seconds.", _timeout));
     }
 
+    /**
+     * Process requests that trigger exceptions: issue a 500 response.
+     *
+     * @param {object} context - The Rocky.Context containing the request.
+     * @param {String} ex      - The triggered exception/error message.
+     *
+     * @private
+    */
     function _defaultExceptionHandler(context, ex) {
         server.error(ex);
         context.send(500, "Agent Error: " + ex);
     }
-
 }
 
+
+/**
+ * This class defines a handler for an event, eg. request authorization, time out or
+ * a triggered exception, or some other, user-defined action (ie. a 'middleware').
+ *
+ * @copyright Electric Imp, Inc. 2015-19
+ * @license   MIT
+ *
+ * @class
+ *
+*/
 class Rocky.Route {
+
+    //------------------ PRIVATE PROPERTIES ------------------//
     _handlers = null;
     _timeout = null;
     _callback = null;
 
+    /**
+     * The Rocky.Route constructor. Not called by user code, only by Rocky instances.
+     *
+     * @constructor
+     *
+     * @param {function} callback - The endpoint handler.
+     *
+     * returns {object} The Rocky.Route instance (this).
+     *
+    */
     constructor(callback) {
-        _handlers = {
-            middlewares = []
-        };
+        _handlers = { middlewares = [] };
         _timeout = 10;
         _callback = callback;
     }
 
     //-------------------- PUBLIC METHODS --------------------//
+
+    /**
+     * Run the registered handlers (or defaults where no handlers are registered).
+     *
+     * @param {object} context        - The Rocky.Context containing the request.
+     * @param {Array} defaultHandlers - The currently registered handlers.
+     *
+    */
     function execute(context, defaultHandlers) {
-        // setup handlers
         // NOTE: Copying these handlers into the route might have some unintended side effect.
         //       Consider changing this if issues come up.
         foreach (handlerName, handler in defaultHandlers) {
@@ -432,34 +665,67 @@ class Rocky.Route {
         _invokeNextHandler(context);
     }
 
+    /**
+     * Register a route-level authorization handler.
+     *
+     * @param {function} callback - The handler that will process route-level requests.
+     *
+     * @returns {object} The target Rocky.route instance (this).
+    */
     function authorize(callback) {
         return _setHandler("authorize", callback);
     }
 
-    function onException(callback) {
-        return _setHandler("onException", callback);
-    }
-
+    /**
+     * Register a route-level 'request rejected' handler.
+     *
+     * @param {function} callback - The handler that will process route-level requests.
+     *
+     * @returns {object} The target Rocky.route instance (this).
+    */
     function onUnauthorized(callback) {
         return _setHandler("onUnauthorized", callback);
     }
 
-    function onTimeout(callback, t = null) {
-        if (t == null) t = _timeout;
-        _timeout = t;
+    /**
+     * Register a route-level authorization handler.
+     *
+     * @param {function} callback - The handler that will process route-level requests.
+     *
+     * @returns {object} The target Rocky.route instance (this).
+    */
+    function onException(callback) {
+        return _setHandler("onException", callback);
+    }
 
+    /**
+     * Register a route-level request timeout handler.
+     *
+     * @param {function} callback - The handler that will process route-level requests.
+     * @param {integer}  timeout  - The timeout period in seconds.
+     *
+     * @returns {object} The target Rocky.route instance (this).
+    */
+    function onTimeout(callback, timeout = null) {
+        if (timeout == null) timeout = _timeout;
+        _timeout = timeout;
         return _setHandler("onTimeout", callback);
     }
 
+    /**
+     * Register a route-level middleware.
+     *
+     * @param {function/array} middlewares - One or more references to middlware functions.
+     *
+     * @returns {object} The target Rocky.route instance (this).
+    */
     function use(middlewares) {
         if (!hasHandler("middlewares")) { _handlers["middlewares"] <- [] };
 
         if(typeof middlewares == "function") {
             _handlers.middlewares.push(middlewares);
         } else if (typeof _handlers.middlewares == "array") {
-            foreach(middleware in middlewares) {
-                use(middleware);
-            }
+            foreach(middleware in middlewares) use(middleware);
         } else {
             throw INVALID_MIDDLEWARE_ERR;
         }
@@ -467,35 +733,66 @@ class Rocky.Route {
         return this;
     }
 
+    /**
+     * Determine if a specified handler has been registered.
+     *
+     * @param {string} handlerName - The name of the handler.
+     *
+     * @returns {Bool} Whether the named handler is registered (true) or not (false).
+    */
     function hasHandler(handlerName) {
         return (handlerName in _handlers);
     }
 
+    /**
+     * Get a specified handler.
+     *
+     * @param {string} handlerName - The name of the handler.
+     *
+     * @returns {function} A reference to the handler.
+    */
     function getHandler(handlerName) {
         // Return null if no handler
-        if (!hasHandler(handlerName)) { return null; }
+        if (!hasHandler(handlerName)) return null;
 
         // Return the handler if it exists
         return _handlers[handlerName];
     }
 
+    /**
+     * Get the route-level request timeout.
+     *
+     * @returns {integer} The timeout period in seconds.
+    */
     function getTimeout() {
         return _timeout;
     }
 
+    /**
+     * Set the route-level request timeout.
+     *
+     * @param {integer} The timeout period in seconds.
+    */
     function setTimeout(timeout) {
         return _timeout = timeout;
     }
 
     //-------------------- PRIVATE METHODS --------------------//
 
-    // Invokes the next middleware, and moves on the
-    // authorize/callback/onUnauthorized flow when done with middlewares
+    /**
+     * Invoke the next middleware, and move the authorize/callback/onUnauthorized
+     * flow on when any registered middlewares have completed.
+     *
+     * @param {object}  context - The Rocky.Context instance containing the request.
+     * @param {integer} idx     - Index counter for the handler list.
+     *
+     * @private
+    */
     function _invokeNextHandler(context, idx = 0) {
         // If we've sent a response, we're done
         if (context.isComplete()) return;
 
-        // check if we have middlewares left to execute
+        // Check if we have middlewares left to execute
         if (idx < _handlers.middlewares.len()) {
             try {
                 // if we do, execute them (with a next() function for the next middleware)
@@ -511,7 +808,7 @@ class Rocky.Route {
                     // If we're authorized, execute the route handler
                     _callback(context);
                 } else {
-                    // if we unauthorized, execute the onUnauthorized handler
+                    // if we're unauthorized, execute the onUnauthorized handler
                     _handlers.onUnauthorized(context);
                 }
             } catch (ex) {
@@ -520,13 +817,32 @@ class Rocky.Route {
         }
     }
 
-    // Generator method to create next() functions for middleware
+    /**
+     * Generate 'next()' functions for middlewares. These are supplied to handlers so
+     * that they can invoke the next handler in the sequence.
+     *
+     * @param {object}  context - The Rocky.Context instance containing the request.
+     * @param {integer} idx     - Index counter for the handler list.
+     *
+     * @returns {function} The next function to excecute in the middlware sequence.
+     *
+     * @private
+    */
     function _nextGenerator(context, idx) {
         return function() { _invokeNextHandler(context, idx); }.bindenv(this);
     }
 
-
-    // Sets a handlers (used internally to simplify code)
+    //
+    /**
+     * Set a handler (used internally to simplify code).
+     *
+     * @param {string}   handlerName - The name of the handler.
+     * @param {function} callback    - The function to be assigned to that name.
+     *
+     * @returns {object} The target Rocky.Route instance (this).
+     *
+     * @private
+    */
     function _setHandler(handlerName, callback) {
         // Create handler slot if required
         if (!hasHandler(handlerName)) { _handlers[handlerName] <- null; }
@@ -538,7 +854,21 @@ class Rocky.Route {
     }
 }
 
+/**
+ * This class defines a Rocky request context, which combines the core imp API request
+ * and response objects with extracted data (eg. path, authorization), user-defined data,
+ * and housekeeping information (eg. whether the context has responded).
+ *
+ * @copyright Electric Imp, Inc. 2015-19
+ * @license   MIT
+ *
+ * @class
+ *
+*/
+
 class Rocky.Context {
+
+    // ------------------ PUBLIC PROPERTIES ------------------//
     req = null;
     res = null;
     sent = null;
@@ -551,6 +881,17 @@ class Rocky.Context {
     userdata = null;
     static _contexts = {};
 
+    /**
+     * The Rock.Context constructor. Not called by user code, only by Rocky instances.
+     *
+     * @constructor
+     *
+     * @param {object} _req - An imp API HTTPRequest instance.
+     * @param {object} _res - An imp API HTTPResponse instance.
+     *
+     * returns {object} A Rocky.Context instance.
+     *
+    */
     constructor(_req, _res) {
         req = _req;
         res = _res;
@@ -558,7 +899,7 @@ class Rocky.Context {
         time = date();
         userdata = {};
 
-        // Identify and store the context
+        // Set the context's identify and then store it
         do {
             id = math.rand();
         } while (id in _contexts);
@@ -566,6 +907,15 @@ class Rocky.Context {
     }
 
     //-------------------- STATIC METHODS --------------------//
+
+    /**
+     * Get the context identified by the specified ID.
+     *
+     * @param {integer} id - A Rocky.Context identifier.
+     *
+     * @returns {object} The requested Rocky.Context instance, or null.
+     *
+    */
     static function get(id) {
         if (id in _contexts) {
             return _contexts[id];
@@ -574,7 +924,14 @@ class Rocky.Context {
         }
     }
 
-    // Closes ALL contexts
+    /**
+     * Send a response to all current contexts. This closes but does not delete all contexts.
+     *
+     * @param {integer} statuscode - The response's HTTP status code.
+     * @param {string}  response   - The response body.
+     * @param {table}   headers    - Optional additional response headers. Default: no additional headers.
+     *
+    */
     static function sendToAll(statuscode, response, headers = {}) {
         // Send to all active contexts
         foreach (key, context in _contexts) {
@@ -583,34 +940,80 @@ class Rocky.Context {
             }
             context._doSend(statuscode, response);
         }
+
         // Remove all contexts after sending
         _contexts.clear();
     }
 
     //-------------------- PUBLIC METHODS --------------------//
+
+    /**
+     * Does the request include the 'accept' header with the 'text/html' mime type?
+     *
+     * @returns {Bool} true if the request has 'accept: text/html'
+     *
+    */
     function isbrowser() {
         return (("accept" in req.headers) && (req.headers.accept.find("text/html") != null));
     }
 
+    // ADDED 3.0.0
+    // lowerCamelCase version of the above call. Keep the old one to
+    // minimize the incompatibility, but document/recommend the new form
+    function isBrowser() {
+        return isbrowser();
+    }
+
+    /**
+     * Get the value of the specified header.
+     *
+     * @param {string} key - The header name.
+     * @param {string} def - A default value for non-existent headers. Default: null
+     *
+     * @returns {string} The value or the default.
+     *
+    */
     function getHeader(key, def = null) {
         key = key.tolower();
         if (key in req.headers) return req.headers[key];
         else return def;
     }
 
+    /**
+     * Set the value of the specified header.
+     *
+     * @param {string} key   - The header name.
+     * @param {string} value - The header's assigned value.
+     *
+    */
     function setHeader(key, value) {
         return res.header(key, value);
     }
 
+    /**
+     * Send the context's response. This does not delete the context but
+     * removes it from the store.
+     * Supports two forms: 'send(statuscode, message)' and 'send(message)'.
+     *
+     * @param {integer} code      - The response's HTTP status code or its body
+     * @param {string}  message   - The response's body.
+     * @param {bool}    forcejson - Mandate that the body is JSON-encoded.
+     *
+    */
     function send(code, message = null, forcejson = false) {
         _doSend(code, message, forcejson);
 
         // Remove the context from the store
-        if (id in _contexts) {
-            delete Rocky.Context._contexts[id];
-        }
+        if (id in _contexts) delete Rocky.Context._contexts[id];
     }
 
+    /**
+     * Set the context timeout.
+     *
+     * @param {integer}  timeout  - The timeout period in seconds.
+     * @param {function} callback - The timeout handler.
+     *
+    */
     function setTimeout(timeout, callback) {
         // Set the timeout timer
         if (timer) imp.cancelwakeup(timer);
@@ -623,12 +1026,27 @@ class Rocky.Context {
         }.bindenv(this))
     }
 
+    /**
+     * Determine if the context's response has been sent.
+     *
+     * @returns {Bool} true if the context's response has been sent, otherwise false.
+     *
+    */
     function isComplete() {
         return sent;
     }
 
     //-------------------- PRIVATE METHODS --------------------//
 
+    /**
+     * Send the context's response. Handles both 'send(message)' and 'send(code, message)'
+     *
+     * @param {integer/any} code      - The response's HTTP status code, or body
+     * @param {any}         message   - The response's body.
+     * @param {bool}        forcejson - Mandate that the body is JSON-encoded. Default: false.
+     *
+     * @private
+    */
     function _doSend(code, message = null, forcejson = false) {
         // Cancel the timeout
         if (timer) {
@@ -637,9 +1055,7 @@ class Rocky.Context {
         }
 
         // Has this context been closed already?
-        if (sent) {
-            return false;
-        }
+        if (sent) return false;
 
         if (forcejson) {
             // Encode whatever it is as a json object
@@ -663,6 +1079,7 @@ class Rocky.Context {
             // Normal result
             res.send(code, message);
         }
+
         sent = true;
     }
 
