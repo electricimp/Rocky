@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Electric Imp
+// Copyright (c) 2015-19 Electric Imp
 // This file is licensed under the MIT License
 // http://opensource.org/licenses/MIT
 
