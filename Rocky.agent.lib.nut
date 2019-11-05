@@ -254,7 +254,9 @@ class Rocky {
         if (typeof middlewares == "function") {
             _handlers.middlewares.push(middlewares);
         } else if (typeof _handlers.middlewares == "array") {
-            foreach (middleware in middlewares) use(middleware);
+            foreach (middleware in middlewares) {
+                use(middleware);
+            }
         } else {
             throw INVALID_MIDDLEWARE_ERR;
         }
@@ -502,9 +504,9 @@ class Rocky {
         local verb = req.method.toupper();
 
         // ignore trailing /s if _strictRouting == false
-        if(!_strictRouting) {
-            while (signature.len() > 1 && signature[signature.len()-1] == '/') {
-                signature = signature.slice(0, signature.len()-1);
+        if (!_strictRouting) {
+            while (signature.len() > 1 && signature[signature.len() - 1] == '/') {
+                signature = signature.slice(0, signature.len() - 1);
             }
         }
 
