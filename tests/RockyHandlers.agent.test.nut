@@ -129,7 +129,7 @@ class RockyHandlers extends Core {
             "signatureOverride": "/testnotfound",
             "onNotFound": onNotFound.bindenv(this),
             "statuscode": 404
-        }, "fail");
+        });
     }
 
     function testNotFound2b() {
@@ -138,7 +138,7 @@ class RockyHandlers extends Core {
             "signatureOverride": "/TestnotFound",
             "onNotFound": onNotFound.bindenv(this),
             "statuscode": 404
-        }, "fail");
+        });
     }
 
     function testNotFound2c() {
@@ -147,13 +147,22 @@ class RockyHandlers extends Core {
             "signatureOverride": "/TestNotfound",
             "onNotFound": onNotFound.bindenv(this),
             "statuscode": 404
-        }, "fail");
+        });
     }
 
     function testNotFound2d() {
         return createTest({
             "signature": "/testNotFound",
             "signatureOverride": "/TESTNOTFOUND",
+            "onNotFound": onNotFound.bindenv(this),
+            "statuscode": 404
+        });
+    }
+
+    function testNotFound2e() {
+        return createTest({
+            "signature": "/testNotFound",
+            "signatureOverride": "/testNotFound",
             "onNotFound": onNotFound.bindenv(this),
             "statuscode": 404
         }, "fail");
