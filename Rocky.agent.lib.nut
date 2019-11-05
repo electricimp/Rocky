@@ -130,6 +130,8 @@ class Rocky {
     function on(verb, signature, callback, timeout = null) {
         // Check timeout and set it to class-level timeout if not specified for route
         if (timeout == null) timeout = this._timeout;
+        // ADDED 3.0.0 -- enforce timeout type (fix for https://github.com/electricimp/Rocky/issues/23)
+        if (typeof timeout != "integer" && typeof timeout != "float") throw ROCKY_ERROR.TIMEOUT;
 
         // Register this verb and signature against the callback
         verb = verb.toupper();
@@ -219,6 +221,7 @@ class Rocky {
     */
     function onTimeout(callback, timeout = null) {
         if (timeout == null) timeout = _timeout;
+        // ADDED 3.0.0 -- enforce timeout type
         if (typeof timeout != "integer" && typeof timeout != "float") throw ROCKY_ERROR.TIMEOUT;
         _handlers.onTimeout <- callback;
         _timeout = timeout;
@@ -714,6 +717,8 @@ class Rocky.Route {
     */
     function onTimeout(callback, timeout = null) {
         if (timeout == null) timeout = _timeout;
+        // ADDED 3.0.0 -- enforce timeout type
+        if (typeof timeout != "integer" && typeof timeout != "float") throw ROCKY_ERROR.TIMEOUT;
         _timeout = timeout;
         return _setHandler("onTimeout", callback);
     }
