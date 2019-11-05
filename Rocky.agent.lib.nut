@@ -219,7 +219,7 @@ class Rocky {
     */
     function onTimeout(callback, timeout = null) {
         if (timeout == null) timeout = _timeout;
-        if (typeof timeout != "integer" && typeof timeout != "float") throw ROCKY_ERROR.TIMEOUT
+        if (typeof timeout != "integer" && typeof timeout != "float") throw ROCKY_ERROR.TIMEOUT;
         _handlers.onTimeout <- callback;
         _timeout = timeout;
         return this;
@@ -329,12 +329,10 @@ class Rocky {
             local onTimeout = _handlers.onTimeout;
             local timeout = route.handler.getTimeout();
 
-            if (route.handler.hasHandler("onTimeout")) {
-                onTimeout = route.handler.getHandler("onTimeout");
-            }
+            if (route.handler.hasHandler("onTimeout")) onTimeout = route.handler.getHandler("onTimeout");
 
             context.setTimeout(timeout, onTimeout);
-            route.handlersute(context, _handlers);
+            route.handler.execute(context, _handlers);
         } else {
             // if we don't have a handler
             _handlers.onNotFound(context);
