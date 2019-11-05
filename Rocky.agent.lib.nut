@@ -133,7 +133,7 @@ class Rocky {
 
         // Register this verb and signature against the callback
         verb = verb.toupper();
-        signature = signature.tolower();
+        //signature = signature.tolower();
         if (!(signature in _handlers)) _handlers[signature] <- {};
 
         local routeHandler = Rocky.Route(callback);
@@ -505,7 +505,7 @@ class Rocky {
      * @private
     */
     function _handler_match(req) {
-        local signature = req.path.tolower();
+        local signature = req.path; //.tolower();
         local verb = req.method.toupper();
 
         // ignore trailing /s if _strictRouting == false
