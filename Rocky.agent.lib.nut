@@ -1,4 +1,11 @@
-const ROCKY_PARSE_ERROR = "Error parsing body of request";
+enum ROCKY_ERROR {
+    PARSE = "Error parsing body of request",
+    MIDDLEWARE = "Invalid middleware",
+    TIMEOUT = "Bad timeout value - must be an integer or float",
+    NO_BOUNDARY = "No boundary found in content-type"
+}
+
+const ROCKY_PARSE_ERROR =
 
 /**
  * This class allows you to define and operate an agent-served API.
@@ -206,12 +213,13 @@ class Rocky {
      * Register a handler for timed out requests.
      *
      * @param {function} callback - The handler that will process request time-outs.
-     * @param {integer}  timeout  - Optional timeout in seconds. Default: the class-level value.
+     * @param {integer/float}  timeout  - Optional timeout in seconds. Default: the class-level value.
      *
      * @returns {object} The Rocky instance (this).
     */
     function onTimeout(callback, timeout = null) {
         if (timeout == null) timeout = _timeout;
+        if (typeof timeout != "integer" && typeof timeout != "float") throw ROCKY_ERROR.TIMEOUT
         _handlers.onTimeout <- callback;
         _timeout = timeout;
         return this;
@@ -256,7 +264,7 @@ class Rocky {
         } else if (typeof _handlers.middlewares == "array") {
             foreach (middleware in middlewares) use(middleware);
         } else {
-            throw INVALID_MIDDLEWARE_ERR;
+            throw ROCKY_ERROR.MIDDLEWARE;
         }
 
         return this;
@@ -367,7 +375,7 @@ class Rocky {
                 boundary = contentType.slice(match.end);
                 boundary = strip(boundary);
             } else {
-                throw "No boundary found in content-type";
+                throw ROCKY_ERROR.NO_BOUNDARY;
             }
 
             // Remove all carriage returns from string (to support either \r\n or \n for linebreaks)
@@ -727,7 +735,7 @@ class Rocky.Route {
         } else if (typeof _handlers.middlewares == "array") {
             foreach(middleware in middlewares) use(middleware);
         } else {
-            throw INVALID_MIDDLEWARE_ERR;
+            throw ROCKY_ERROR.MIDDLEWARE;
         }
 
         return this;
