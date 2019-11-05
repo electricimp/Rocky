@@ -254,9 +254,7 @@ class Rocky {
         if (typeof middlewares == "function") {
             _handlers.middlewares.push(middlewares);
         } else if (typeof _handlers.middlewares == "array") {
-            foreach (middleware in middlewares) {
-                use(middleware);
-            }
+            foreach (middleware in middlewares) use(middleware);
         } else {
             throw INVALID_MIDDLEWARE_ERR;
         }
@@ -265,7 +263,7 @@ class Rocky {
     }
 
     //-------------------- PRIVATE METHODS --------------------//
-]
+
     /**
      * Apply default headers to the specified reponse object.
      *
