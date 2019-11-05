@@ -122,6 +122,43 @@ class RockyHandlers extends Core {
         });
     }
 
+    // issue: https://github.com/electricimp/Rocky/issues/36
+    function testNotFound2a() {
+        return createTest({
+            "signature": "/testNotFound",
+            "signatureOverride": "/testnotfound",
+            "onNotFound": onNotFound.bindenv(this),
+            "statuscode": 404
+        }, "fail");
+    }
+
+    function testNotFound2b() {
+        return createTest({
+            "signature": "/testNotFound",
+            "signatureOverride": "/TestnotFound",
+            "onNotFound": onNotFound.bindenv(this),
+            "statuscode": 404
+        }, "fail");
+    }
+
+    function testNotFound2c() {
+        return createTest({
+            "signature": "/testNotFound",
+            "signatureOverride": "/TestNotfound",
+            "onNotFound": onNotFound.bindenv(this),
+            "statuscode": 404
+        }, "fail");
+    }
+
+    function testNotFound2d() {
+        return createTest({
+            "signature": "/testNotFound",
+            "signatureOverride": "/TESTNOTFOUND",
+            "onNotFound": onNotFound.bindenv(this),
+            "statuscode": 404
+        }, "fail");
+    }
+
     // issue: https://github.com/electricimp/Rocky/issues/25
     //function testNotFoundException() {
     //    return createTest({
