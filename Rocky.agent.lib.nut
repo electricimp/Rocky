@@ -5,8 +5,6 @@ enum ROCKY_ERROR {
     NO_BOUNDARY = "No boundary found in content-type"
 }
 
-const ROCKY_PARSE_ERROR =
-
 /**
  * This class allows you to define and operate an agent-served API.
  *
