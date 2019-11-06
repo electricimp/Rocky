@@ -567,6 +567,16 @@ class Rocky {
         return null;
     }
 
+    /**
+     * Check a passed timeout value is a positive integer or float.
+     * Incorrect types throw; negative values are converted to positive.
+     * NOTE Method is static to make it a class method, accessible by
+     *      Rocky.Route instances
+     *
+     * @param {any} t - A possible timeout value.
+     *
+     * @private
+    */
     static function _checkTimeout(t) {
         // Check for valid values
         if (typeof t != "integer" && typeof t != "float") throw ROCKY_ERROR.TIMEOUT;
