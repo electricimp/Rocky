@@ -113,6 +113,7 @@ class RockyConstructor extends Core {
         });
     }
 
+    // https://github.com/electricimp/Rocky/issues/35
     function testRockySingleton() {
 
         // Make ten rocky references -- all of of which are expected to point
