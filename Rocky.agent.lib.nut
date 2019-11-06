@@ -349,7 +349,7 @@ class Rocky {
 
             if (route.handler.hasHandler("onTimeout")) onTimeout = route.handler.getHandler("onTimeout");
 
-            context.setTimeout(timeout, onTimeout);
+            context.setTimeout(timeout, onTimeout, _handlers.onException);
             route.handler.execute(context, _handlers);
         } else {
             // If we don't have a handler
@@ -838,7 +838,7 @@ class Rocky.Route {
         if (idx < _handlers.middlewares.len()) {
             try {
                 // if we do, execute them (with a next() function for the next middleware)
-                _handlers.middlewares[idx](context, _nextGenerator(context, idx+1));
+                _handlers.middlewares[idx](context, _nextGenerator(context, idx + 1));
             } catch (ex) {
                 _handlers.onException(context, ex);
             }
@@ -1056,14 +1056,18 @@ class Rocky.Context {
      * @param {function} callback - The timeout handler.
      *
     */
-    function setTimeout(timeout, callback) {
+    function setTimeout(timeout, callback, exceptionHandler = null) {
         // Set the timeout timer
         if (timer) imp.cancelwakeup(timer);
         timer = imp.wakeup(timeout, function() {
             if (callback == null) {
                 send(502, "Timeout");
             } else {
-                callback(this);
+                try {
+                    callback(this);
+                } catch(ex) {
+                    if (exceptionHandler != null) exceptionHandler(this, ex);
+                }
             }
         }.bindenv(this))
     }
