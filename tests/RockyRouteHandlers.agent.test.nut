@@ -102,14 +102,14 @@ class RockyRouteHandlers extends Core {
     }
 
     // issue: https://github.com/electricimp/Rocky/issues/25
-    //function testTimeoutException() {
-    //    info("This test will take a couple of seconds");
-    //    return createTest({
-    //        "signature": "/testTimeout",
-    //        "timeout": true,
-    //        "onTimeoutRoute": throwException.bindenv(this).bindenv(this),
-    //        "onExceptionRoute": onException.bindenv(this),
-    //        "statuscode": 500
-    //    });
-    //}
+    function testTimeoutException() {
+        info("This test will take a couple of seconds");
+        return createTest({
+            "signature": "/testTimeout",
+            "timeout": true,
+            "onTimeoutRoute": throwException.bindenv(this).bindenv(this),
+            "onExceptionRoute": onException.bindenv(this),
+            "statuscode": 500
+        });
+    }
 }
