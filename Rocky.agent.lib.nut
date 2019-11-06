@@ -47,11 +47,25 @@ class Rocky {
             ::rocky_singleton_control <- this;
         }
 
-        // Initialize settings
-        if ("timeout" in settings) _timeout = settings.timeout;
-        if ("allowUnsecure" in settings) _allowUnsecure = settings.allowUnsecure;
-        if ("strictRouting" in settings) _strictRouting = settings.strictRouting;
-        if ("accessControl" in settings) _accessControl = settings.accessControl;
+        // Initialize settings, checking values as appropriate
+        if ("timeout" in settings) {
+            // Check for valid values
+            if (typeof settings.timeout != "integer" && settings.timeout != "float") throw ROCKY_ERROR.TIMEOUT;
+            if (settings.timeout < 0) settings.timeout *= -1;
+            _timeout = settings.timeout;
+        }
+
+        if ("allowUnsecure" in settings) {
+            if (typeof settings.allowUnsecure == "bool") _allowUnsecure = settings.allowUnsecure;
+        }
+
+        if ("strictRouting" in settings) {
+            if (typeof settings.strictRouting == "bool") _strictRouting = settings.strictRouting;
+        }
+
+        if ("accessControl" in settings) {
+            if (typeof settings.accessControl == "bool") _accessControl = settings.accessControl;
+        }
 
         // Inititalize handlers and middleware
         _handlers = {
@@ -130,6 +144,7 @@ class Rocky {
         if (timeout == null) timeout = this._timeout;
         // ADDED 3.0.0 -- enforce timeout type (fix for https://github.com/electricimp/Rocky/issues/23)
         if (typeof timeout != "integer" && typeof timeout != "float") throw ROCKY_ERROR.TIMEOUT;
+        if (timeout < 0) timeout *= -1;
 
         // Register this verb and signature against the callback
         verb = verb.toupper();
@@ -222,6 +237,7 @@ class Rocky {
         if (timeout == null) timeout = _timeout;
         // ADDED 3.0.0 -- enforce timeout type
         if (typeof timeout != "integer" && typeof timeout != "float") throw ROCKY_ERROR.TIMEOUT;
+        if (timeout < 0) timeout *= -1;
         _handlers.onTimeout <- callback;
         _timeout = timeout;
         return this;
@@ -719,6 +735,7 @@ class Rocky.Route {
         if (timeout == null) timeout = _timeout;
         // ADDED 3.0.0 -- enforce timeout type
         if (typeof timeout != "integer" && typeof timeout != "float") throw ROCKY_ERROR.TIMEOUT;
+        if (timeout < 0) timeout *= -1;
         _timeout = timeout;
         return _setHandler("onTimeout", callback);
     }
