@@ -74,11 +74,12 @@ class RockyConstructor extends Core {
     // issue: https://github.com/electricimp/Rocky/issues/24 (and 23)
     function testRockyTimeoutOption() {
         local tests = [];
-        foreach (element in values) {
+        foreach (idx, element in values) {
             tests.push({
                 "signature": "/testTimeoutOption",
                 "params": {"timeout": element},
-                "onException": onException.bindenv(this)
+                "onException": onException.bindenv(this),
+                "expect": ((idx > 1 || idx < 6) ? "fail" : "success")
             });
         }
         return createTestAll(tests);
