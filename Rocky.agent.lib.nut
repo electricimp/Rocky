@@ -49,10 +49,7 @@ class Rocky {
 
         // Initialize settings, checking values as appropriate
         if ("timeout" in settings) {
-            // Check for valid values
-            if (typeof settings.timeout != "integer" && settings.timeout != "float") throw ROCKY_ERROR.TIMEOUT;
-            if (settings.timeout < 0) settings.timeout *= -1;
-            _timeout = settings.timeout;
+            _timeout = _checkTimeout(settings.timeout);
         }
 
         if ("allowUnsecure" in settings) {
@@ -143,8 +140,7 @@ class Rocky {
         // Check timeout and set it to class-level timeout if not specified for route
         if (timeout == null) timeout = this._timeout;
         // ADDED 3.0.0 -- enforce timeout type (fix for https://github.com/electricimp/Rocky/issues/23)
-        if (typeof timeout != "integer" && typeof timeout != "float") throw ROCKY_ERROR.TIMEOUT;
-        if (timeout < 0) timeout *= -1;
+        timeout = _checkTimeout(timeout)
 
         // Register this verb and signature against the callback
         verb = verb.toupper();
@@ -236,10 +232,8 @@ class Rocky {
     function onTimeout(callback, timeout = null) {
         if (timeout == null) timeout = _timeout;
         // ADDED 3.0.0 -- enforce timeout type
-        if (typeof timeout != "integer" && typeof timeout != "float") throw ROCKY_ERROR.TIMEOUT;
-        if (timeout < 0) timeout *= -1;
+        _timeout = _checkTimeout(timeout);
         _handlers.onTimeout <- callback;
-        _timeout = timeout;
         return this;
     }
 
@@ -562,6 +556,13 @@ class Rocky {
         return null;
     }
 
+    function _checkTimeout(t) {
+        // Check for valid values
+        if (typeof t != "integer" && typeof t != "float") throw ROCKY_ERROR.TIMEOUT;
+        if (t < 0) t *= -1;
+        return t;
+    }
+
     //-------------------- DEFAULT HANDLERS --------------------//
 
     /**
@@ -734,9 +735,7 @@ class Rocky.Route {
     function onTimeout(callback, timeout = null) {
         if (timeout == null) timeout = _timeout;
         // ADDED 3.0.0 -- enforce timeout type
-        if (typeof timeout != "integer" && typeof timeout != "float") throw ROCKY_ERROR.TIMEOUT;
-        if (timeout < 0) timeout *= -1;
-        _timeout = timeout;
+        _timeout = _checkTimeout(timeout);
         return _setHandler("onTimeout", callback);
     }
 
