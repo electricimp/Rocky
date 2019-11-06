@@ -79,7 +79,7 @@ class RockyConstructor extends Core {
                 "signature": "/testTimeoutOption",
                 "params": {"timeout": element},
                 "onException": onException.bindenv(this),
-                "expect": ((idx > 1 || idx < 6) ? "fail" : "success")
+                "expect": ((idx > 1 || idx < 6) ? "success" : "fail")
             });
         }
         return createTestAll(tests);
