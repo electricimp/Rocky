@@ -1,8 +1,9 @@
 enum ROCKY_ERROR {
     PARSE = "Error parsing body of request",
-    MIDDLEWARE = "Invalid middleware",
+    BAD_MIDDLEWARE = "Invalid middleware -- middleware must be a function",
     TIMEOUT = "Bad timeout value - must be an integer or float",
-    NO_BOUNDARY = "No boundary found in content-type"
+    NO_BOUNDARY = "No boundary found in content-type",
+    BAD_CALLBACK = "Invald callback -- callback must be a function"
 }
 
 /**
@@ -203,6 +204,7 @@ class Rocky {
      * @returns {object} The Rocky instance (this).
     */
     function authorize(callback) {
+        if (typeof callback != function) throw ROCKY_ERROR.BAD_CALLBACK;
         _handlers.authorize <- callback;
         return this;
     }
@@ -215,6 +217,7 @@ class Rocky {
      * @returns {object} The Rocky instance (this).
     */
     function onUnauthorized(callback) {
+        if (typeof callback != function) throw ROCKY_ERROR.BAD_CALLBACK;
         _handlers.onUnauthorized <- callback;
         return this;
     }
@@ -230,6 +233,7 @@ class Rocky {
      * @returns {object} The Rocky instance (this).
     */
     function onTimeout(callback, timeout = null) {
+        if (typeof callback != function) throw ROCKY_ERROR.BAD_CALLBACK;
         if (timeout == null) timeout = _timeout;
         // ADDED 3.0.0 -- enforce timeout type
         _timeout = _checkTimeout(timeout);
@@ -245,6 +249,7 @@ class Rocky {
      * @returns {object} The Rocky instance (this).
     */
     function onNotFound(callback) {
+        if (typeof callback != function) throw ROCKY_ERROR.BAD_CALLBACK;
         _handlers.onNotFound <- callback;
         return this;
     }
@@ -257,6 +262,7 @@ class Rocky {
      * @returns {object} The Rocky instance (this).
     */
     function onException(callback) {
+        if (typeof callback != function) throw ROCKY_ERROR.BAD_CALLBACK;
         _handlers.onException <- callback;
         return this;
     }
@@ -276,7 +282,7 @@ class Rocky {
         } else if (typeof _handlers.middlewares == "array") {
             foreach (middleware in middlewares) use(middleware);
         } else {
-            throw ROCKY_ERROR.MIDDLEWARE;
+            throw ROCKY_ERROR.BAD_MIDDLEWARE;
         }
 
         return this;
@@ -346,8 +352,13 @@ class Rocky {
             context.setTimeout(timeout, onTimeout);
             route.handler.execute(context, _handlers);
         } else {
-            // if we don't have a handler
-            _handlers.onNotFound(context);
+            // If we don't have a handler
+            // FROM 3.0.0 -- manage exceptions thrown in the handler
+            try {
+                _handlers.onNotFound(context);
+            } catch (ex) {
+                _handlers.onException(context, ex);
+            }
         }
     }
 
@@ -699,6 +710,7 @@ class Rocky.Route {
      * @returns {object} The target Rocky.route instance (this).
     */
     function authorize(callback) {
+        if (typeof callback != function) throw ROCKY_ERROR.BAD_CALLBACK;
         return _setHandler("authorize", callback);
     }
 
@@ -710,6 +722,7 @@ class Rocky.Route {
      * @returns {object} The target Rocky.route instance (this).
     */
     function onUnauthorized(callback) {
+        if (typeof callback != function) throw ROCKY_ERROR.BAD_CALLBACK;
         return _setHandler("onUnauthorized", callback);
     }
 
@@ -721,6 +734,7 @@ class Rocky.Route {
      * @returns {object} The target Rocky.route instance (this).
     */
     function onException(callback) {
+        if (typeof callback != function) throw ROCKY_ERROR.BAD_CALLBACK;
         return _setHandler("onException", callback);
     }
 
@@ -733,6 +747,7 @@ class Rocky.Route {
      * @returns {object} The target Rocky.route instance (this).
     */
     function onTimeout(callback, timeout = null) {
+        if (typeof callback != function) throw ROCKY_ERROR.BAD_CALLBACK;
         if (timeout == null) timeout = _timeout;
         // ADDED 3.0.0 -- enforce timeout type
         _timeout = Rocky._checkTimeout(timeout);
@@ -754,7 +769,7 @@ class Rocky.Route {
         } else if (typeof _handlers.middlewares == "array") {
             foreach(middleware in middlewares) use(middleware);
         } else {
-            throw ROCKY_ERROR.MIDDLEWARE;
+            throw ROCKY_ERROR.BAD_MIDDLEWARE;
         }
 
         return this;
@@ -830,6 +845,8 @@ class Rocky.Route {
         } else {
             // Otherwise, run the rest of the flow
             try {
+
+
                 // Check if we're authorized
                 if (_handlers.authorize(context)) {
                     // If we're authorized, execute the route handler
