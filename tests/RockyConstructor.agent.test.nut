@@ -72,14 +72,30 @@ class RockyConstructor extends Core {
     }
 
     // issue: https://github.com/electricimp/Rocky/issues/24 (and 23)
-    function testRockyTimeoutOption() {
+    function testRockyTimeoutOptionBad() {
+        // These should FAIL
         local tests = [];
         foreach (idx, element in values) {
-            tests.push({
-                "signature": "/testTimeoutOption",
-                "params": {"timeout": element},
-                "expect": ((idx > 1 || idx < 6) ? "success" : "fail")
-            });
+            if (idx < 2 && idx > 5) {
+                tests.push({
+                    "signature": "/testTimeoutOption",
+                    "params": {"timeout": element},
+                });
+            }
+        }
+        return createTestAll(tests, "negative");
+    }
+
+    function testRockyTimeoutOptionGood() {
+        // These should PASS
+        local tests = [];
+        foreach (idx, element in values) {
+            if (idx > 1 && idx < 6) {
+                tests.push({
+                    "signature": "/testTimeoutOption",
+                    "params": {"timeout": element},
+                });
+            }
         }
         return createTestAll(tests);
     }
