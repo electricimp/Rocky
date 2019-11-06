@@ -556,7 +556,7 @@ class Rocky {
         return null;
     }
 
-    function _checkTimeout(t) {
+    static function _checkTimeout(t) {
         // Check for valid values
         if (typeof t != "integer" && typeof t != "float") throw ROCKY_ERROR.TIMEOUT;
         if (t < 0) t *= -1;
@@ -735,7 +735,7 @@ class Rocky.Route {
     function onTimeout(callback, timeout = null) {
         if (timeout == null) timeout = _timeout;
         // ADDED 3.0.0 -- enforce timeout type
-        _timeout = _checkTimeout(timeout);
+        _timeout = Rocky._checkTimeout(timeout);
         return _setHandler("onTimeout", callback);
     }
 
