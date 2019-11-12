@@ -9,5 +9,5 @@
     "*.test.nut",
     "tests/**/*.test.nut"
   ],
-  "agentFile": "Rocky.class.nut"
+  "agentFile": "Rocky.agent.lib.nut"
 }

@@ -1,4 +1,8 @@
-#require "rocky.class.nut:2.0.0"
+// Copyright (c) 2015-19 Electric Imp
+// This file is licensed under the MIT License
+// http://opensource.org/licenses/MIT
+
+#require "Rocky.agent.lib.nut:3.0.0"
 
 // Dummy Data for API
 data <- { "foo": "bar" };

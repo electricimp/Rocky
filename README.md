@@ -1,10 +1,10 @@
-# Rocky 2.0.2
+# Rocky 3.0.0 #
 
-Rocky is an framework for building powerful and scalable APIs for your imp-powered products. The Rocky library consists of the following classes:
+Rocky is an framework for building powerful and scalable APIs for your imp-powered products.
 
 ![Build Status](https://cse-ci.electricimp.com/app/rest/builds/buildType:(id:Rocky_BuildAndTest)/statusIcon)
 
----
+The Rocky library consists of the following classes:
 
 - [Rocky](#rocky) &mdash; The core application, used to create routes, set default handlers, etc.
   - [Rocky.get](#rocky_verb) &mdash; Creates a handler for GET requests that match the specified signature.
@@ -17,8 +17,9 @@ Rocky is an framework for building powerful and scalable APIs for your imp-power
   - [Rocky.onTimeout](#rocky_ontimeout) &mdash; Set the default `onTimeout` handler for all routes.
   - [Rocky.onNotFound](#rocky_onnotfound) &mdash; Set the default `onNotFound` handler for all routes.
   - [Rocky.onException](#rocky_onexception) &mdash; Set the default `onException` handler for all routes.
-  - [Rocky.getContext](#rocky_getcontext) &mdash; Static method that retrieves a [Rocky.Context](#context) object by it's ID (primairly used for asyncronous requests).
-  - [Rocky.sendToAll](#rocky_sendtoall) &mdash; Static method that sends a response to *all* open requests/requests.
+  - [Rocky.getContext](#rocky_getcontext) &mdash; Class method that retrieves a [Rocky.Context](#context) object by its ID.
+  - [Rocky.sendToAll](#rocky_sendtoall) &mdash; Class method that sends a response to *all* open requests/requests.
+  - [Rocky.init](#rocky_init) &mdash; Class method that delivers a single, common Rocky instance.
 - [Rocky.Route](#route) &mdash; A handler for a specific route.
   - [Rocky.Route.use](#route_use) -&mdash; Binds one or more middlewares to the route.
   - [Rocky.Route.authorize](#route_authorize) &mdash; Specify the default `authorize` handler for the route.
@@ -41,24 +42,32 @@ Rocky is an framework for building powerful and scalable APIs for your imp-power
   - [Order of Execution](#middleware_orderofexecution) &mdash; Explanation of the execution flow for middleware and event handlers.
 - [CORS Requests](#cors_requests) &mdash; How to handle cross-site HTTP requests ([CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)).
 
-<div id="rocky"><h2>Rocky(<i>[options]</i>)</h2></div>
+## Rocky Usage ##
 
-Calling the Rocky constructor creates a new Rocky application. An optional *options* table can be passed into the constructor to override default behaviours:
+Rocky 3.0.0 adds a new class method, [*Rocky.init()*](#rocky_init), which may be used in place of the constructor. This method will always return a single, common instance of Rocky which is instanced the first time either [*Rocky.init()*](#rocky_init) or the constructor is called. Calling [*Rocky.init()*](#rocky_init) a subsequent time returns a reference to the singleton.
+
+You can use [*Rocky.init()*](#rocky_init) in place of the constructor to ensure you only ever have one active Rocky instance in your application. This is the recommended approach, but if you required multiple separate instances, use the constructor directly.
+
+Please see [*Rocky.init()*](#rocky_init) for more information.
+
+<div id="rocky"><h3>Constructor: Rocky(<i>[options]</i>)</h3></div>
+
+Calling the Rocky constructor creates a new Rocky instance. An [optional table](#options) may be passed into the constructor to override default settings.
 
 ```squirrel
-#require "rocky.class.nut:2.0.2"
+#require "rocky.agent.lib.nut:3.0.0"
 
-app <- Rocky()
+app <- Rocky();
 ```
 
-### options
+#### options ####
 
-An table containing any of the following keys may be passed into the Rocky constructor to modify the default behaviour:
+A table containing any of the following keys may be passed into the Rocky constructor to modify the default behavior:
 
-- *accessControl* &mdash; Modifies whether or not Rocky will automatically add `Access-Control` headers to the response object
-- *allowUnsecure* &mdash; Modifies whether or not Rocky will accept HTTP requests (as opposed to HTTPS)
-- *strictRouting* &mdash; Enables or disables strict routing. By default, Rocky will consider `/foo` and `/foo/` as identical paths.
-- *timeout* &mdash; Modifies how long Rocky will hold onto a request before automatically executing the *onTimeout* handler
+- *accessControl* &mdash; Modifies whether Rocky will automatically add `Access-Control` headers to the response object.
+- *allowUnsecure* &mdash; Modifies whether Rocky will accept HTTP requests. Rocky defaults to HTTPS.
+- *strictRouting* &mdash; Enables or disables strict routing. By default, Rocky will consider `/foo` and `/foo/` to be identical paths.
+- *timeout* &mdash; Modifies how long Rocky will hold onto a request before automatically executing the *onTimeout* handler.
 
 These are the default settings:
 
@@ -71,29 +80,13 @@ defaults <- {
 }
 ```
 
-<div id="rocky_verb"><h3>VERB(<i>signature, callback[, timeout]</i>)</h3></div>
-The *VERB()* methods allow you to assign routes based on the specified verb and signature. The following *VERB*s are allowed:
+<div id="signatures"><h4>Signatures</h4></div>
 
-- app.get(*signature, callback[, timeout]*)
-- app.put(*signature, callback[, timeout]*)
-- app.post(*signature, callback[, timeout]*)
+Signatures can either be fully qualified paths (`/led/state`) or include regular expressions (`/users/([^/]*)`). If the path is specified using a regular expression, any matches will be added to the [Rocky.Context](#context) object passed into the callback.
 
-When a match is found on the verb (as specified by the method) and the *signature*, the callback function will be executed. The callback takes a [Rocky.Context](#context) object as a parameter. An optional route-level timeout can be passed in. If no timeout is passed in, the timeout set in the constructor will be used.
+In the following example, we capture the desired user’s username:
 
 ```squirrel
-// Responds with '200, { "message": "hello world" }'
-// when the user makes a GET request to the agent URL:
-app.get("/", function(context) {
-    context.send({ "message": "hello world" })
-})
-```
-
-<div id="signatures"><h3>Signatures</h3></div>
-
-Signatures can either be fully qualified paths (`/led/state`) or include regular expressions (`/users/([^/]*)`). If the path is specified using a regular expressions, any matches will be added to the [Rocky.Context](#context) object passed into the callback. In the following example, we capture the desired user’s username:
-
-```squirrel
-// Get a user
 app.get("/users/([^/]*)", function(context) {
     // Grab the username from the regex
     // (context.matches[0] will always be the full path)
@@ -109,9 +102,60 @@ app.get("/users/([^/]*)", function(context) {
 });
 ```
 
+## Rocky Instance Methods ##
+
+<div id="rocky_verb"><h3>VERB(<i>signature, callback[, timeout]</i>)</h3></div>
+
+Rocky’s *VERB()* methods allow you to assign routes based on the specified verb and [signature](#signatures). The following *VERB()* methods are provided:
+
+- app.get(*signature, callback[, timeout]*)
+- app.put(*signature, callback[, timeout]*)
+- app.post(*signature, callback[, timeout]*)
+
+When a match is found on the verb (as specified by the method) and the signature, the callback function will be executed. The callback receives a [Rocky.Context](#context) object as its only argument.
+
+An optional route-level timeout can be specified. If no timeout is specified, the timeout set in [the constructor](#rocky) will be used.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *signature* | String | Yes | A [signature](#signatures) defining the API endpoint |
+| *callback* | Function | Yes | A function to handle the request. It receives a [Rocky.Context](#context) object |
+| *timeout* | String | No | An optional request timeout in seconds. Default: the [constructor-set](#rocky) timeout |
+
+#### Returns ####
+
+Rocky.Route &mdash; an instance representing the registered handler.
+
+#### Example ####
+
+```squirrel
+// Responds with '200, { "message": "hello world" }'
+// when the user makes a GET request to the agent URL:
+app.get("/", function(context) {
+    context.send({ "message": "hello world" })
+})
+```
+
 <div id="rocky_on"><h3>on(<i>verb, signature, callback[, timeout]</i>)</h3></div>
 
-The *on()* method allows you to create APIs that use verbs other than GET, PUT or POST. The *on()* method works identically to the *VERB()* methods, but you specify the verb as a string:
+This method allows you to create APIs that use verbs other than GET, PUT or POST. The *on()* method works identically to the *VERB()* methods, but you specify the verb as a string.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *verb* | String | Yes | The HTTP request verb |
+| *signature* | String | Yes | A [signature](#signatures) defining the API endpoint |
+| *callback* | Function | Yes | A function to handle the request. It receives a [Rocky.Context](#context) object |
+| *timeout* | String | No | An optional request timeout in seconds. Default: the [constructor-set](#rocky) timeout |
+
+#### Returns ####
+
+Rocky.Route &mdash; an instance representing the registered handler.
+
+#### Example ####
 
 ```squirrel
 // Delete a user
@@ -133,7 +177,21 @@ app.on("delete", "/users/([^/]*)", function(context) {
 
 <div id="rocky_use"><h3>use(<i>callback</i>)</h3></div>
 
-The *use()* method allows you to attach a middleware, or array of middlewares, to the global Rocky object.
+This method allows you to attach application-specific handlers, called “middleware”, or an array of middlewares, to the global Rocky object. Please see [**Middleware**](#middleware) for more information.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *callback* | Function | Yes | A function to process the request |
+
+The callback function receives a [Rocky.Context](#context) object and a reference to the next middleware in sequence as its arguments. See the example below for guidance.
+
+#### Returns ####
+
+*this* &mdash; the target Rocky instance.
+
+#### Example ####
 
 ```squirrel
 // Create a function to add the specific CORS headers we want:
@@ -157,16 +215,26 @@ app.get("/", function(context) {
 });
 ```
 
-See the [Middleware](#middleware) section for more information.
-
 <div id="rocky_authorize"><h3>authorize(<i>callback</i>)</h3></div>
 
-The *authorize()* method allows you to specify a global function to validate or authorize incoming requests. The callback function takes a [Rocky.Context](#context) object as a parameter, and must return either `true` (if the request is authorized) or `false` (if the request is not authorized).
+This method allows you to specify a global function to validate or authorize incoming requests.
 
-The *authorize()* method is executed before the main request handler.
+#### Parameters ####
 
-- If the callback return `true`, the route handler will be invoked.
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *callback* | Function | Yes | A function to authorize or reject the request |
+
+The callback function takes a [Rocky.Context](#context) object as its single argument and must return either `true` (if the request is authorized) or `false` (if the request is not authorized). The callback is executed before the main request handler, so:
+
+- If the callback returns `true`, the route handler will be invoked.
 - If the callback returns `false`, the [onUnauthorized](#rocky_onAuthorized) response handler is invoked.
+
+#### Returns ####
+
+*this* &mdash; the target Rocky instance.
+
+#### Example ####
 
 ```squirrel
 app.authorize(function(context) {
@@ -177,7 +245,21 @@ app.authorize(function(context) {
 
 <div id="rocky_onunauthorized"><h3>onUauthorized(<i>callback</i>)</h3></div>
 
-The *onUnauthorized()* method allows you to configure the default response to requests that fail the *authorize()* method. The callback method takes a [Rocky.Context](#context) object as a parameter. The callback method passed into *onUnauthorized()* will be executed for all unauthorized requests that do not have a route-level [onUnauthorized](route_onUnauthorized) response handler.
+This method allows you to configure the default response to requests that fail to be authorized via the callback registered with [*authorize()*](#rocky_authorize).
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *callback* | Function | Yes | A function to manage unauthorized requests |
+
+The callback takes a [Rocky.Context](#context) object as its single argument and will be executed for all unauthorized requests that do not have a route-level [onUnauthorized](route_onUnauthorized) response handler.
+
+#### Returns ####
+
+*this* &mdash; the target Rocky instance.
+
+#### Example ####
 
 ```squirrel
 app.onUnauthorized(function(context) {
@@ -187,7 +269,21 @@ app.onUnauthorized(function(context) {
 
 <div id="rocky_ontimeout"><h3>onTimeout(<i>callback</i>)</h3></div>
 
-The *onTimeout()* method allows you to configure the default response to requests that exceed the timeout. The callback method passed into *onTimeout()* will be executed for all timed out requests that do not have a route-level [onTimeout](route_onTimeout) response handler. The callback method takes a [Rocky.Context](#context) object as a parameter. This method should (but is not required to) send a response code of 408.
+This method allows you to configure the default response to requests that exceed the timeout.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *callback* | Function | Yes | A function to manage requests that timed out |
+
+The callback takes a [Rocky.Context](#context) object as its single argument and will be executed for all timed out requests that do not have a route-level [onTimeout](route_onTimeout) response handler. The callback should (but is not required to) send a response code of 408.
+
+#### Returns ####
+
+*this* &mdash; the target Rocky instance.
+
+#### Example ####
 
 ```squirrel
 app.onTimeout(function(context) {
@@ -197,29 +293,75 @@ app.onTimeout(function(context) {
 
 <div id="rocky_onnotfound"><h3>onNotFound(<i>callback</i>)</h3></div>
 
-The *onNotFound()* method allows you to configure the response handler for requests that could not match a route. The callback method takes a [Rocky.Context](#context) object as a parameter. This method should (but is not required to) send a response code of 404.
+This method allows you to configure the response handler for requests that could not match a route.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *callback* | Function | Yes | A function to manage requests that could not be matched to an endpoint |
+
+The callback takes a [Rocky.Context](#context) object as its single argument. It should (but is not required to) send a response code of 404.
+
+#### Returns ####
+
+*this* &mdash; the target Rocky instance.
+
+#### Example ####
 
 ```squirrel
 app.onNotFound(function(context) {
-    context.send(404, { "message": "Oh snaps, the resource you're looking for doesn't exist!" });
+    context.send(404, { "message": "The resource you're looking for doesn't exist" });
 });
 ```
 
 <div id="rocky_onexception"><h3>onException(<i>callback</i>)</h3></div>
 
-The *onException()* method allows you to configure the global response handler for requests that encounter runtime errors. The callback method takes two parameters: a [Rocky.Context](#context) object and the exception. The callback method will be executed for all requests that encounter runtime errors and do not have a route-level [onException](route_onexception) handler. This method should (but is not required to) send a response code of 500.
+This method allows you to configure the global response handler for requests that encounter runtime errors.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *callback* | Function | Yes | A function to manage requests that triggered runtime errors |
+
+The callback takes a [Rocky.Context](#context) object and the exception as its arguments. See the example below for usage guidance. It will be executed for all requests that encounter runtime errors and do not have a route-level [onException](route_onexception) handler. This method should (but is not required to) send a response code of 500.
+
+#### Returns ####
+
+*this* &mdash; the target Rocky instance.
+
+#### Example ####
 
 ```squirrel
-app.onException(function(context, ex) {
-    context.send(500, { "message": "Internal Agent Error", "error": ex });
+app.onException(function(context, except) {
+    context.send(500, { "message": "Internal Agent Error",
+                        "error":   except });
 });
 ```
 
+## Rocky Class Methods ##
+
 <div id="rocky_getcontext"><h3>Rocky.getContext(<i>id</i>)</h3></div>
 
-Every [Rocky.Context](#context) object created by Rocky is assigned a unique ID that can found using [context.id](#context_id). We can use this ID and the static *getContext()* method to retrieve previously created contexts. This is primarily used for long-running or asynchronous requests. In the following example, we fetch the temperature from the device when the request is made:
+Every [Rocky.Context](#context) object created by Rocky is assigned a unique ID that can retrieved by reading its [context.id](#context_id) field. Pass such an ID into *Rocky.getContext()* to retrieve previously created contexts. This method is primarily used for long-running or asynchronous requests. It is a method called on the class itself, not an instance.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *id* | String | Yes | The ID of the required context |
+
+#### Returns ####
+
+Nothing.
+
+#### Example ####
+
+In this example, we fetch the temperature from the device when the request is made.
 
 ```squirrel
+// Agent Code
 app.get("/temp", function(context) {
     // Send a getTemp request to the device, and pass context.id as the data
     device.send("getTemp", context.id);
@@ -237,7 +379,7 @@ device.on("getTempResponse", function(data) {
 ```
 
 ```squirrel
-// device code
+// Device Code
 agent.on("getTemp", function(id) {
     local temp = getTemp();
     // When we get a "getTemp" message, send back a response that includes
@@ -248,7 +390,21 @@ agent.on("getTemp", function(id) {
 
 <div id="rocky_sendtoall"><h3>Rocky.sendToAll(<i>statuscode, response[, headers]</i>)</h3></div>
 
-The static *sendToAll()* method sends a response to **all** open requests. This is most useful in APIs that allow for long-polling.
+This method sends a response to **all** open requests. This is most useful in APIs that allow for long-polling. It is a method called on the class itself, not an instance.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *statuscode* | Integer | Yes | The response’s [HTTP status code](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes) |
+| *response* | String | Yes | The response’s body |
+| *headers* | Table | No | Additional response headers and their values. Default: no extra headers |
+
+#### Returns ####
+
+Nothing.
+
+#### Example ####
 
 ```squirrel
 app.get("/poll", function(context) {
@@ -261,11 +417,44 @@ device.on("data", function(data) {
 });
 ```
 
-<div id="route"><h2>Rocky.Route</h2></div>
+<div id="rocky_init"><h3>Rocky.init(<i>[options]</i>)</h3></div>
 
-The Rocky.Route object encapsulates the behaviour associated with a request made to a specific route. You should never call the Rocky.Route constructor directly, instead, you should create and associate routes using the [*Rocky.get()*](#rocky_get), [*Rocky.put()*](#rocky_put), [*Rocky.post()*](rocky_post) and [*Rocky.on()*](rocky_on) methods.
+This method returns a Rocky singleton. You may supply a table of options, as per the [constructor](#rocky), but these will only be applied on your first *Rocky.init()* call, and then only if you have not already called the constructor.
 
-All methods that affect the behaviour of a route are designed to be used in a fluent style, ie. the methods return the route object itself, so they can be chained together.
+- If you call the constructor first, all subsequent *Rocky.init()* calls will return the constructed instance.
+- If you call *Rocky.init()* first, all subsequent *Rocky.init()* calls will return the singleton instance.
+- If you call *Rocky.init()* first and later call the constructor, you will have two separate instances, but all subsequent *Rocky.init()* calls will return the singleton instance.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *options* | Table | No | Instance options to modify the default behavior. See the [constructor](#rocky) for details |
+
+#### Returns ####
+
+A Rocky singleton.
+
+#### Example ####
+
+```squirrel
+local r1 = Rocky.init();
+server.log(r1);
+
+local r2 = Rocky.init();
+server.log(r2);
+
+local r3 = Rocky.init();
+server.log(r3);
+
+// Logs the same reference, to the singleton, in each case
+```
+
+<div id="route"><h2>Rocky.Route Methods</h2></div>
+
+The Rocky.Route object encapsulates the behavior associated with a request made to a specific route. You should never call the Rocky.Route constructor directly; instead, create and associate routes using Rocky’s [*get()*](#rocky_get), [*put()*](#rocky_put), [*post()*](rocky_post) and [*on()*](rocky_on) methods.
+
+All methods that affect the behavior of a route are designed to be used in a fluent style, ie. the methods return the route object itself, so they can be chained together. For example:
 
 ```squirrel
 app.get("/", function(context) {
@@ -279,7 +468,21 @@ app.get("/", function(context) {
 
 <div id="route_use"><h3>use(<i>callback</i>)</h3></div>
 
-The *use()* method allows you to attach a middleware, or array of middlewares, to a specific route.
+This method allows you to attach a middleware, or array of middlewares, to a specific route. Please see [**Middleware**](#middleware) for more information.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *callback* | Function | Yes | A function to manage requests that timed out |
+
+The callback function receives a [Rocky.Context](#context) object and a reference to the next middleware in sequence as its arguments. See the example below for guidance.
+
+#### Returns ####
+
+Nothing.
+
+#### Example ####
 
 ```squirrel
 app <- Rocky();
@@ -305,16 +508,26 @@ app.post("/users", function(context) {
 }).use([ validateNewUserMiddleware ]);
 ```
 
-See the [Middleware](#middleware) section for more information.
-
 <div id="route_authorize"><h3>authorize(<i>callback</i>)</h3></div>
 
-The *authorize()* method allows you to specify a route-level function to validate or authorize incoming requests. A route-level authorize handler will override the global authorize handler set by [*Rocky.authorize()*](#rocky_authorize) for requests made to the specified route. The callback function takes a [Rocky.Context](#context) object as a parameter, and must return either `true` (if the request is authorized) or `false` (if the request is not authorized).
+This method allows you to specify a route-level function to validate or authorize incoming requests. Such a route-level authorization handler will override the global authorization handler set by Rocky’s [*authorize()*](#rocky_authorize) method for requests made to the specified route.
 
-The *authorize()* method is executed before the main request handler.
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *callback* | Function | Yes | A function to authorize or reject the request |
+
+The callback function receives a [Rocky.Context](#context) object as its single argument and must return either `true` (if the request is authorized) or `false` (if the request is not authorized). The callback is executed before the main request handler, so:
 
 - If the callback returns `true`, the route handler will be invoked.
-- If the callback returns `false`, the [onUnauthorized](#rocky_onAuthorized) handler is invoked.
+- If the callback returns `false`, the route-specific [onUnauthorized](#route_onAuthorized) response handler is invoked. If there is no route-specific [onUnauthorized](#route_onAuthorized) response handler, the global [onUnauthorized](#rocky_onAuthorized) response handler is invoked.
+
+#### Returns ####
+
+Nothing.
+
+#### Example ####
 
 ```squirrel
 // Delete a user
@@ -331,7 +544,21 @@ app.on("delete", "/users/([^/]*)", function(context) {
 
 <div id="route_onunauthorized"><h3>onUauthorized(<i>callback</i>)</h3></div>
 
-The *onUnauthorized()* method allows you to configure a route -level response to requests that fail the *authorize()* method. A route-level onUnauthorized handler will override the global onUnauthorized handler set by [*Rocky.onUnauthorized()*](#rocky_onunauthorized) for requests made to the specified route. The callback method takes a [Rocky.Context](#context) object as a parameter. The callback method passed into *onUnauthorized()* will be executed for all unauthorized requests that do not have a route-level [onUnauthorized](route_onUnauthorized) response handler.
+This method allows you to configure a route-level response to requests that fail the route-specific authorization handler, if present. A route-level onUnauthorized handler will override the global onUnauthorized handler set by Rocky’s [*onUnauthorized()*](#rocky_onunauthorized) method for requests made to the specified route.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *callback* | Function | Yes | A function to authorize or reject the request |
+
+The callback function receives a [Rocky.Context](#context) object as its single argument and will be executed for all unauthorized requests made to the specified route.
+
+#### Return Value ####
+
+Nothing.
+
+#### Example ####
 
 ```squirrel
 // Delete a user
@@ -350,7 +577,21 @@ app.on("delete", "/users/([^/]*)", function(context) {
 
 <div id="route_ontimeout"><h3>onTimeout(<i>callback</i>)</h3></div>
 
-The *onTimeout()* method allows you to configure a route level response to requests that exceed the timeout. A route-level onTimeout handler will override the global onTimeout handler set by [*Rocky.onTimeout()*](#rocky_ontimeout) for requests made to the specified route. The callback method passed into *onTimeout()* will be executed for all timed out requests that do not have a route-level [onTimeout](route_onTimeout) response handler. The callback method takes a [Rocky.Context](#context) object as a parameter. This method should (but is not required to) send a response code of 408.
+This method allows you to configure a route-level response to requests that exceed the timeout. A route-level onTimeout handler will override the global onTimeout handler set by Rocky’s [*onTimeout()*](#rocky_ontimeout) method for requests made to the specified route.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *callback* | Function | Yes | A function to manage requests that timed out |
+
+The callback takes a [Rocky.Context](#context) object as its single argument and will be executed for all timed out requests made to the specified route. The callback should (but is not required to) send a response code of 408.
+
+#### Returns ####
+
+Nothing.
+
+#### Example ####
 
 ```squirrel
 app.get("/", function(context) {
@@ -369,7 +610,21 @@ device.on("getTempResponse", function(data) {
 
 <div id="route_onexception"><h3>onException(<i>callback</i>)</h3></div>
 
-The *onException()* method allows you to configure a route-level response handler for requests that encounter runtime errors. A route-level onException handler will override the global onException handler set by [*Rocky.onTimeout()*](#rocky_onexception) for requests made to the specified route. The callback method takes two parameters: a [Rocky.Context](#context) object and the exception. The callback method will be executed for all requests that encounter runtime errors and do not have a route-level [onException](route_onexception) handler. This method should (but is not required to) send a response code of 500.
+This method allows you to configure a route-level response handler for requests that encounter runtime errors. A route-level onException handler will override the global onException handler set by Rocky’s[*onTimeout()*](#rocky_onexception) method for requests made to the specified route.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *callback* | Function | Yes | A function to manage requests that triggered runtime errors |
+
+The callback takes a [Rocky.Context](#context) object and the exception as its arguments. See the example below for usage guidance. It will be executed for all requests made to the specified route that encounter runtime errors. This method should (but is not required to) send a response code of 500.
+
+#### Returns ####
+
+Nothing.
+
+#### Example ####
 
 ```squirrel
 app.get("/", function(context) {
@@ -380,18 +635,26 @@ app.get("/", function(context) {
 });
 ```
 
-<div id="context"><h2>Rocky.Context</h2></div>
+<div id="context"><h2>Rocky.Context Instance Methods</h2></div>
 
-The Rocky.Context object encapsulates an [HTTP Request Table](http://electricimp.com/docs/api/httphandler/) an [HTTPResponse](http://electricimp.com/docs/api/httpresponse/) object, and other important information. When a request is made, Rocky will automatically generate a new context object for that request and pass it to the required callbacks, ie. you should never manually create a Rocky.Context object.
+The Rocky.Context object encapsulates an [HTTP Request Table](https://developer.electricimp.com/api/httphandler), an [HTTPResponse](https://developer.electricimp.com/api/httpresponse) object, and other important information. When a request is made, Rocky will automatically generate a new context object for that request and pass it to the required callbacks. Never manually create a Rocky.Context object.
 
 <div id="context_send"><h3>send(<i>statuscode[, message]</i>)</h3></div>
 
+This method returns a response to a request made to a Rocky application.
 
-The *send()* method returns a response to a request made to a Rocky application. It takes two parameters. The first is an integer [HTTP status code](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes). The second parameter, which is optional, is the data that will be relayed back to the requester, either a string, an array of values or a table.
+#### Parameters ####
 
-**Note** Arrays and tables are automatically JSON-encoded before being sent.
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *statuscode* | Integer | Yes | The response’s [HTTP status code](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes) |
+| *message* | String, array or table | No | The response’s body. Arrays and tables are automatically JSON-encoded before being sent |
 
-The method returns `false` if the context has already been used to respond to the request.
+#### Return Value ####
+
+Boolean &mdash; `false` if the context has already been used to respond to the request, otherwise `true`.
+
+#### Examples ####
 
 ```
 app.get("/color", function(context) {
@@ -401,7 +664,19 @@ app.get("/color", function(context) {
 
 <h3>send(<i>message</i>)</h3>
 
-The *send()* method may also be invoked without a status code. When invoked in this fashion, a status code of 200 is assumed:
+The *send()* method may also be invoked without a status code. When invoked in this fashion, a status code of 200 is assumed.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *message* | String, array or table | Yes | The response’s body. Arrays and tables are automatically JSON-encoded before being sent |
+
+#### Return Value ####
+
+Boolean &mdash; `false` if the context has already been used to respond to the request, otherwise `true`.
+
+#### Example #####
 
 ```squirrel
 app.get("/", function(context) {
@@ -411,11 +686,29 @@ app.get("/", function(context) {
 
 <div id="context_iscomplete"><h3>isComplete()</h3></div>
 
-The *isComplete()* method returns whether or not a response has been sent for the current context. Rocky keeps track of whether or not a response has been sent, and middlewares and route handlers don’t execute if the context has already sent a response. This method should primarily be used for developers extending Rocky.
+This method indicates whether or not a response has been sent for the current context. Rocky keeps track of whether or not a response has been sent, and middlewares and route handlers don’t execute if the context has already sent a response.
 
-<div id="context_getheader"><h3>getHeader(<i>headerName</i>)</h3></div>
+This method should primarily be used for developers extending Rocky.
 
-The *getHeader()* method attempts to retrieve a header from the HTTP Request table. If the header is present, the value of that header is returned, if the header is not present `null` will be returned.
+#### Return Value ####
+
+Boolean &mdash; `true` if the context’s response has already been sent, otherwise `false`.
+
+<div id="context_getheader"><h3>getHeader(<i>name</i>)</h3></div>
+
+This method attempts to retrieve a header from the context’s [HTTP Request table](https://developer.electricimp.com/api/httphandler).
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *name* | String | Yes | The header’s name |
+
+#### Return Value ####
+
+String &mdash; If the header is present, the value of the header; otherwise `null`.
+
+#### Example ####
 
 ```squirrel
 // user:password
@@ -428,23 +721,106 @@ app.get("/", function(context) {
 });
 ```
 
-<div id="context_setheader"><h3>setHeader(<i>headerName, data</i>)</h3></div>
+<div id="context_setheader"><h3>setHeader(<i>name, value</i>)</h3></div>
 
-The *setHeader()* method adds the specified header to the HTTPResponse object sent during [context.send](#context_send). In the following example, we create a new user resource and return the location of that resource with a `location` header:
+This method adds the specified header to the [HTTPResponse](https://developer.electricimp.com/api/httpresponse) object sent during [context.send](#context_send).
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *name* | String | Yes | The header’s name |
+| *value* | String | Yes | The header’s value |
+
+#### Return Value ####
+
+Nothing.
+
+#### Example ####
 
 ```squirrel
 app.get("/", function(context) {
     // Redirect requests made to / to /index.html
+    // Add a `location` header
     context.setHeader("Location", http.agenturl() + "/index.html");
     context.send(301);
 });
 ```
 
+<div id="context_isbrowser"><h3>isBrowser()</h3></div>
+
+This method indicates whether the `Accept: text/html` header was present.
+
+#### Return Value ####
+
+Boolean &mdash; `true` if the `Accept: text/html` header was present; otherwise `false`.
+
+#### Example ####
+
+```squirrel
+const INDEX_HTML = @"
+<html>
+    <head>
+        <title>My Agent</title>
+    </head>
+    <body>
+        <h1>Hello World!</h1>
+    </body>
+</html>
+";
+
+app.get("/", function(context) {
+    context.send(200, { message = "Hello World!" });
+});
+
+app.get("/index.html", function(context) {
+    if (!context.isBrowser()) {
+        // If it was an API request
+        context.setHeader("location", http.agenturl());
+        context.send(301);
+        return;
+    }
+
+    // If it was a browser request:
+    context.send(200, INDEX_HTML);
+});
+```
+
+## Rocky.Context Class Methods ##
+
+<div id="context_sendtoall"><h3>Rocky.Context.sendToAll(<i>statuscode, response[, headers]</i>)</h3></div>
+
+This method sends a response to **all** open requests. The preferred way of invoking this method is by calling [*Rocky.sendToAll()*](#rocky_sendtoall).
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *statuscode* | Integer | Yes | The response’s [HTTP status code](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes) |
+| *response* | String | Yes | The response’s body |
+| *headers* | Table | No | Additional response headers and their values. Default: no extra headers |
+
+#### Returns ####
+
+Nothing.
+
+## Rocky.Context Properties ##
+
 <div id="context_req"><h3>context.req</h3></div>
 
-The *context.req* property is a representation of the HTTP Request table. All fields available in the [HTTP Request Table](http://electricimp.com/docs/api/http/onrequest) can be accessed through this property.
+The *req* property is a representation of the underlying [HTTP Request table](https://developer.electricimp.com/api/httphandler). All fields available in the HTTP Request table can be accessed through this property.
 
-If a `content-type` header was included in the request, and the content type was set to `application/json` or `application/x-www-form-urlencoded`, the *body* property of the request will be a table representing the parsed data, rather than the raw body. If the content type was set to `multipart/form-data;`, the *body* property will be an array of tables. In the following example, we assume requests made to POST */users* include a `content-type` header:
+If a `content-type` header was included in the request, and the content type was set to `application/json` or `application/x-www-form-urlencoded`, the *body* property of the request will be a table representing the parsed data, rather than the raw body.
+
+If the content type was set to `multipart/form-data;`, the *body* property will be an array of tables.
+
+**Note 1** If the application requires access to the raw and *unparsed* body of the request, this can be accessed at *context.req.rawbody*.
+
+**Note 2** If you make the *http.post()* call without any HTTP headers explicitly specified, you may end up receiving a request with the `application/x-www-form-urlencoded` content type.
+
+#### Examples ####
+
+In the following example, we assume requests made to POST */users* include a `content-type` header:
 
 ```squirrel
 app.post("/users", function(context) {
@@ -478,11 +854,7 @@ app.post("/users", function(context) {
 });
 ```
 
-**Note** If the application requires access to the raw and *unparsed* body of the request, it can be accessed with *context.req.rawbody*.
-
-**Note** If you make the *http.post()* call without any HTTP headers explicitly specified, you may end up receiving a request with the `application/x-www-form-urlencoded` content type.
-
-To see the difference between *context.req.body* and *context.req.rawbody*, please take a look at following samples. First, code to send post request:
+The following examples show the difference between *context.req.body* and *context.req.rawbody*. First, code to send a post request:
 
 ```squirrel
 // Note that application/x-www-form-urlencoded content-type is added to headers by default
@@ -492,10 +864,9 @@ local req = http.post( (http.agenturl() + "/data"), {}, "hello world" )
 })
 ```
 
-A way to get parsed request body as a table:
+Now, a way to get the parsed request body as a table:
 
 ```squirrel
-
 app.post("/data", function(context) {
     // In this case table identifier will be printed in the server log
     server.log(context.req.body);
@@ -503,10 +874,9 @@ app.post("/data", function(context) {
 });
 ```
 
-And a way to get unparsed request body as a string:
+And a way to get the unparsed request body as a string:
 
 ```squirrel
-
 app.post("/data", function(context) {
     // In this case string "hello world" will be printed in the server log
     server.log(context.req.rawbody);
@@ -516,11 +886,13 @@ app.post("/data", function(context) {
 
 <div id="context_id"><h3>context.id</h3></div>
 
-The *id* property is a unique ID that identifies the context. This is primarily used during long-running tasks and asynchronous requests. See [rocky.getContext](#rocky_getcontext) for example usage.
+The *id* property is a unique value that identifies the context. It is primarily used during long-running tasks and asynchronous requests. See Rocky’s [*getContext()*](#rocky_getcontext) method for an example of its usage.
 
 <div id="context_userdata"><h3>context.userdata</h3></div>
 
 The *userdata* property can be used by the developer to store any information relevant to the current context. This is primarily used during long-running tasks and asynchronous requests.
+
+#### Example ####
 
 ```squirrel
 app.get("/temp", function(context) {
@@ -538,6 +910,8 @@ device.on("getTempResponse", function(data) {
 <div id="context_path"><h3>context.path</h3></div>
 
 The *path* property is an array that contains each element in the path. If a request is made to `/a/b/c` then *path* will be `["a", "b", "c"]`.
+
+#### Example ####
 
 ```squirrel
 app.get("/users/([^/]*)", function(context) {
@@ -557,7 +931,9 @@ app.get("/users/([^/]*)", function(context) {
 
 <div id="context_matches"><h3>context.matches</h3></div>
 
-The *matches* property is an array that represents the results of the regular expression used to find a matching route. If you included a regular expression in your signature, you can use the matches array to access any expressions you may have captured. The first element of the *matches* array will always be the full path.
+The *matches* property is an array that represents the results of the regular expression used to find a matching route. If you included a regular expression in your [signature](#signatures), you can use the *matches* array to access any expressions you may have captured. The first element of the array will always be the full path.
+
+#### Example ####
 
 ```squirrel
 app.get("/users/([^/]*)", function(context) {
@@ -575,54 +951,15 @@ app.get("/users/([^/]*)", function(context) {
 });
 ```
 
-<div id="context_isbrowser"><h3>context.isbrowser()</h3></div>
-
-The *isbrowser()* method returns true if an `Accept: text/html` header was present.
-
-**Note** The *isbrowser()* method is all lowercase (as opposed to lowerCamelCase).
-
-```squirrel
-const INDEX_HTML = @"
-<html>
-    <head>
-        <title>My Agent</title>
-    </head>
-    <body>
-        <h1>Hello World!</h1>
-    </body>
-</html>
-";
-
-app.get("/", function(context) {
-    context.send(200, { message = "Hello World!" });
-});
-
-app.get("/index.html", function(context) {
-    if (!context.isbrowser()) {
-        // If it was an API request
-        context.setHeader("location", http.agenturl());
-        context.send(301);
-        return;
-    }
-
-    // If it was a browser request:
-    context.send(200, INDEX_HTML);
-});
-```
-
-<div id="context_sendtoall"><h3>Rocky.Context.sendToAll(<i>statuscode, response[, headers]</i>)</h3></div>
-
-The static *sendToAll()* method sends a response to **all** open requests. The preferred way of invoking this method is through [*Rocky.sendToAll()*](#rocky_sendtoall).
-
 <div id="context_sent"><h3>context.sent</h3></div>
 
-The *sent* property is **deprecated**. Developers should move to using the [*isComplete()*](#context_iscomplete) method instead.
+The *sent* property is **deprecated**. Developers should instead call [*isComplete()*](#context_iscomplete).
 
 <div id="middleware"><h2>Middleware</h2></div>
 
-Middleware allows you to easily (and scalably) add new functionality to your request handlers. Middleware functions can be attached at either a global level through [*Rocky.use()*](#rocky_use), or at the route level with [*Rocky.Route.use()*](#route_use). Middleware functions are invoked before the main request handler and can aid in debugging, data validation/transformation and more.
+Middleware allows you to add new functionality to your request handlers easily and scalably. Middleware functions can be attached at either a global level through Rocky’s [*use()*](#rocky_use) method, or at the route level with [*Rocky.Route.use()*](#route_use). Middleware functions are invoked before the main request handler and can aid in debugging, data validation and transformation, and more.
 
-Middleware functions are invoked with two parameters: a [Rocky.Context](#context) object and a *next* function. The *next* function invokes the next middleware/handler in the chain (see [Order of Execution](middleware_orderofexecution)).
+Middleware functions are invoked with two parameters: a [Rocky.Context](#context) object and a reference, *next*, to the next middleware/handler in the chain (see [**Order of Execution**](middleware_orderofexecution), below). At the end of the middleware, always call this reference as a function to ensure the next middleware is executed. If there is no subsequent middleware, the call to *next* hands control back to Rocky.
 
 Responding to a request in a middleware prevents further middleware functions and event handlers (such as *authorize*, *onAuthorized*, etc) from executing.
 
@@ -636,7 +973,7 @@ function debuggingMiddleware(context, next) {
     server.log("   PATH: " + context.req.path.tolower());
     server.log("   TIME: " + time());
 
-    // Invoke the next middleware
+    // Invoke the next middleware in the sequence
     next();
 }
 
@@ -709,7 +1046,7 @@ app.post("/data", function(context) {
 }).use([writeAuthMiddleware, validateDataMiddleware]);
 ```
 
-The *next* method allows you to complete asynchronous operations before moving on to the next middleware or handler. In the following example, we lookup a userId from a remote service before moving on:
+Having access to the function referenced by *next* allows you to complete asynchronous operations before moving on to the next middleware or handler. In the following example, we look up a user ID from a remote service before moving on:
 
 ```squirrel
 function userIdMiddleware(context, next) {
@@ -740,18 +1077,19 @@ app.get("/user", function(context) {
 
 <div id="middleware_orderofexecution"><h3>Order of Execution</h3></div>
 
-When Rocky processes an incoming HTTPS request, the following takes place:
+When Rocky processes an incoming HTTPS request, the following sequence of events takes place:
 
-- Rocky adds the access control headers unless the `accessControl` setting is set to `false`
-- Rocky rejects non-HTTPS requests unless the `allowUnsecure` setting is not set to `true`
-- Rocky parses the body (and send a 400 response if there was an error parsing the data)
-- Invoke the Rocky-level middleware functions
-- Invoke the Route-level middleware functions
-- Invoke the authorize function, and based on the return on authorize:
-  - Invokes the request handler (*isAuthorized* returned `true`)
-  - Invokes the onUnauthorized handler (*isAuthorized* returned `false`)
+- Rocky adds the access control headers unless the `accessControl` setting (see [the constructor](#rocky)) is set to `false`.
+- Rocky rejects non-HTTPS requests unless the `allowUnsecure` setting (see [the constructor](#rocky)) is set to `true`.
+- Rocky parses the request body.
+    - Rocky sends a 400 response if there was an error parsing the data.
+- Global-level middleware functions are invoked.
+- Route-level middleware functions are invoked.
+- If present, the global authorization function is invoked.
+    - If the global authorization function returned `true`, the global request handler is invoked.
+    - If the global authorization function returned `false`, the [global unauthorized handler](#rocky_onunathorized) is invoked.
 
-If a middleware function send a response, no further action will be taken on the request.
+If a middleware function sends a response, no further action will be taken on the request.
 
 If a runtime errors occurs after the data has been parsed, the *onError* handler will be invoked.
 
@@ -759,7 +1097,7 @@ If a runtime errors occurs after the data has been parsed, the *onError* handler
 
 During a cross domain AJAX request, some browsers will send a [preflight request](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing#Preflight_example) to determine if it has the permissions needed to perform the action.
 
-To accomodate preflight requests you can add a wildcard OPTIONS handler:
+To accommodate preflight requests you can add a wildcard `OPTIONS` handler:
 
 ```squirrel
 app.on("OPTIONS", ".*", function(context) {
@@ -775,7 +1113,7 @@ Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept
 Access-Control-Allow-Methods: POST, PUT, GET, OPTIONS
 ```
 
-If you wish to override the default headers, you can instantiate Rocky with the `accessControl` setting set to `false`, and use a middleware to add the headers you wish to include:
+If you wish to override these default headers, you can instantiate Rocky with the `accessControl` setting set to `false`, and use a middleware to add the headers you wish to include. For example:
 
 ```squirrel
 function customCORSMiddleware(context, next) {
@@ -791,6 +1129,6 @@ app <- Rocky( { "accessControl": false });
 app.use([ customCORSMiddleware ]);
 ```
 
-## License
+## License ##
 
-Rocky is licensed under [MIT License](https://github.com/electricimp/Rocky/blob/master/LICENSE).
+This library is licensed under [MIT License](./LICENSE).

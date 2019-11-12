@@ -102,16 +102,16 @@ class RockyHandlers extends Core {
     }
 
     // issue: https://github.com/electricimp/Rocky/issues/25
-    //function testTimeoutException() {
-    //    info("This test will take a couple of seconds");
-    //    return createTest({
-    //        "signature": "/testTimeout",
-    //        "timeout": true,
-    //        "onTimeout": throwException.bindenv(this),
-    //        "onException": onException.bindenv(this),
-    //        "statuscode": 500
-    //    });
-    //}
+    function testTimeoutException() {
+        info("This test will take a couple of seconds");
+        return createTest({
+            "signature": "/testTimeout",
+            "timeout": true,
+            "onTimeout": throwException.bindenv(this),
+            "onException": onException.bindenv(this),
+            "statuscode": 500
+        });
+    }
 
     function testNotFound() {
         return createTest({
@@ -122,14 +122,60 @@ class RockyHandlers extends Core {
         });
     }
 
+    // issue: https://github.com/electricimp/Rocky/issues/36
+    function testNotFound2a() {
+        return createTest({
+            "signature": "/testNotFound",
+            "signatureOverride": "/testnotfound",
+            "onNotFound": onNotFound.bindenv(this),
+            "statuscode": 404
+        });
+    }
+
+    function testNotFound2b() {
+        return createTest({
+            "signature": "/testNotFound",
+            "signatureOverride": "/TestnotFound",
+            "onNotFound": onNotFound.bindenv(this),
+            "statuscode": 404
+        });
+    }
+
+    function testNotFound2c() {
+        return createTest({
+            "signature": "/testNotFound",
+            "signatureOverride": "/TestNotfound",
+            "onNotFound": onNotFound.bindenv(this),
+            "statuscode": 404
+        });
+    }
+
+    function testNotFound2d() {
+        return createTest({
+            "signature": "/testNotFound",
+            "signatureOverride": "/TESTNOTFOUND",
+            "onNotFound": onNotFound.bindenv(this),
+            "statuscode": 404
+        });
+    }
+
+    function testNotFound2e() {
+        return createTest({
+            "signature": "/testNotFound",
+            "signatureOverride": "/testNotFound",
+            "onNotFound": onNotFound.bindenv(this),
+            "statuscode": 404
+        }, "fail");
+    }
+
     // issue: https://github.com/electricimp/Rocky/issues/25
-    //function testNotFoundException() {
-    //    return createTest({
-    //        "signature": "/testNotFoundException",
-    //        "signatureOverride": "/testNotFoundIDontExist",
-    //        "onNotFound": throwException.bindenv(this),
-    //        "onException": onException.bindenv(this),
-    //        "statuscode": 500
-    //    });
-    //}
+    function testNotFoundException() {
+        return createTest({
+            "signature": "/testNotFoundException",
+            "signatureOverride": "/testNotFoundIDontExist",
+            "onNotFound": throwException.bindenv(this),
+            "onException": onException.bindenv(this),
+            "statuscode": 500
+        });
+    }
 }
