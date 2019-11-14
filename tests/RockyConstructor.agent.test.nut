@@ -113,24 +113,4 @@ class RockyConstructor extends Core {
         });
     }
 
-    // https://github.com/electricimp/Rocky/issues/35
-    function testRockySingleton() {
-
-        // Make ten rocky references -- all of of which are expected to point
-        // to the SAME rocky instance
-        local rockies = [];
-        for (local i = 0 ; i < 10 ; i++) {
-            rockies.append(Rocky.init());
-        }
-
-        // Check all ten references point to the same instance
-        foreach (index, rocky in rockies) {
-            foreach (count, aRocky in rockies) {
-                if (count != index) {
-                    this.assertEqual(rocky, aRocky);
-                }
-            }
-        }
-
-    }
 }

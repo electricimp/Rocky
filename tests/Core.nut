@@ -25,7 +25,7 @@
 // while class being tested can be accessed from global scope as "::Promise".
 
 class Core extends ImpTestCase {
-    
+
     // Default params for createTest function
     defaultParams = {
         // Options for Rocky constructor
@@ -62,7 +62,7 @@ class Core extends ImpTestCase {
         "cb": null,
         // If true, defaultParams.cb will be forced to be null
         "cbUseNull": false,
-        // Callback, that will be called, when server will receive new request. 
+        // Callback, that will be called, when server will receive new request.
         // If not specified, then server will respond with 200 statuscode.
         // If params.cb specified, then this callback will have no affect.
         "callback": null,
@@ -103,7 +103,7 @@ class Core extends ImpTestCase {
     // 8) Send one (or more) request(s) and wait for Rocky's response.
     //    When get response, verify statuscode and call callback function for additional verify (if defined). If everything ok, then test passed, otherwise failed.
     //    If more than one requests send, then test will be passed only when all responses verifications passed.
-    // 
+    //
     // @param {table} params
     // @param {string} expect - Expected completion of the test (success|fail)
     // @return {Promise}
@@ -126,8 +126,8 @@ class Core extends ImpTestCase {
             local app;
             local route;
             params.setdelegate(defaultParams); // Setup default values
-            _createTestCallConstructorsDirectly(params, fail) && 
-            _createTestSetupHandlers(params, fail, app, route) && 
+            _createTestCallConstructorsDirectly(params, fail) &&
+            _createTestSetupHandlers(params, fail, app, route) &&
             _createTestSendRequest(params, fail, success, expect);
         }.bindenv(this));
     }
@@ -182,7 +182,7 @@ class Core extends ImpTestCase {
     function _createTestSetupHandlers(params, fail, app, route) {
         try {
             // Setup Rocky handlers
-            app = Rocky(params.params);
+            app = Rocky.init(params.params);
             if (params.onAuthorize != null) {
                 app.authorize(params.onAuthorize);
             }
@@ -272,8 +272,8 @@ class Core extends ImpTestCase {
                         local signature = typeof params.signatureOverride == "string" ? params.signatureOverride : params.signature;
                         local req = http.request(
                             method,
-                            http.agenturl() + signature, 
-                            params.headers, 
+                            http.agenturl() + signature,
+                            params.headers,
                             params.body
                         );
                         req.sendasync(function(res) {
@@ -312,7 +312,7 @@ class Core extends ImpTestCase {
 
     // createTestAll
     // Create Promise for series of tests testing Rocky
-    // 
+    //
     // @param {array} tests - Array of 'params' for createTest(params)
     // @param {string} type - The condition for the success of all tests (positive|negative)
     // @return {Promise}
