@@ -288,7 +288,7 @@ Rocky <- {
             req.rawbody <- req.body;
             req.body = _parse_body(req);
         } catch (err) {
-            context.send(400, ROCKY_PARSE_ERROR);
+            context.send(400, ROCKY_ERROR.PARSE);
             return;
         }
 
