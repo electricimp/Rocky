@@ -2,11 +2,13 @@
 
 Rocky is an framework for building powerful and scalable APIs for your imp-powered products.
 
+**Important** From version 3.0.0, Rocky is implemented as a table rather than a class. **This is a breaking change**. This change has been made to reduce Rocky’s memory footprint and to ensure that Rocky is available solely as a singleton. For full details on updating your code, please see [**Rocky Usage**](#rocky-usage), below.
+
 ![Build Status](https://cse-ci.electricimp.com/app/rest/builds/buildType:(id:Rocky_BuildAndTest)/statusIcon)
 
-The Rocky library consists of the following classes:
+The Rocky library consists of the following components:
 
-- [Rocky](#rocky) &mdash; The core application, used to create routes, set default handlers, etc.
+- [Rocky](#rocky-usage) &mdash; The core application, used to create routes, set default handlers, etc.
   - [Rocky.get](#rocky_verb) &mdash; Creates a handler for GET requests that match the specified signature.
   - [Rocky.put](#rocky_verb) &mdash; Creates a handler for PUT requests that match the specified signature.
   - [Rocky.post](#rocky_verb) &mdash; Creates a handler for POST requests that match the specified signature.
@@ -18,8 +20,7 @@ The Rocky library consists of the following classes:
   - [Rocky.onNotFound](#rocky_onnotfound) &mdash; Set the default `onNotFound` handler for all routes.
   - [Rocky.onException](#rocky_onexception) &mdash; Set the default `onException` handler for all routes.
   - [Rocky.getContext](#rocky_getcontext) &mdash; Class method that retrieves a [Rocky.Context](#context) object by its ID.
-  - [Rocky.sendToAll](#rocky_sendtoall) &mdash; Class method that sends a response to *all* open requests/requests.
-  - [Rocky.init](#rocky_init) &mdash; Class method that delivers a single, common Rocky instance.
+  - [Rocky.sendToAll](#rocky_sendtoall) &mdash; Class method that sends a response to *all* open requests.
 - [Rocky.Route](#route) &mdash; A handler for a specific route.
   - [Rocky.Route.use](#route_use) -&mdash; Binds one or more middlewares to the route.
   - [Rocky.Route.authorize](#route_authorize) &mdash; Specify the default `authorize` handler for the route.
@@ -42,43 +43,49 @@ The Rocky library consists of the following classes:
   - [Order of Execution](#middleware_orderofexecution) &mdash; Explanation of the execution flow for middleware and event handlers.
 - [CORS Requests](#cors_requests) &mdash; How to handle cross-site HTTP requests ([CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)).
 
+<a id="rocky"></a>
+
 ## Rocky Usage ##
 
-Rocky 3.0.0 adds a new class method, [*Rocky.init()*](#rocky_init), which may be used in place of the constructor. This method will always return a single, common instance of Rocky which is instanced the first time either [*Rocky.init()*](#rocky_init) or the constructor is called. Calling [*Rocky.init()*](#rocky_init) a subsequent time returns a reference to the singleton.
+Rocky 3.0.0 is implemented as a table to enforce singleton behavior. You code should no longer instantiate Rocky using a constructor call, but instead call the new *init()* method to initialize the library.
 
-You can use [*Rocky.init()*](#rocky_init) in place of the constructor to ensure you only ever have one active Rocky instance in your application. This is the recommended approach, but if you required multiple separate instances, use the constructor directly.
-
-Please see [*Rocky.init()*](#rocky_init) for more information.
-
-<div id="rocky"><h3>Constructor: Rocky(<i>[options]</i>)</h3></div>
-
-Calling the Rocky constructor creates a new Rocky instance. An [optional table](#options) may be passed into the constructor to override default settings.
+*init()* takes the same argument as the former constructor: an optional [table of settings](#initialization-options).
 
 ```squirrel
 #require "rocky.agent.lib.nut:3.0.0"
 
-app <- Rocky();
+local settings = { "timeout": 30 };
+app <- Rocky.init(settings);
 ```
 
-#### options ####
+If your code doesn’t alter Rocky’s default behavior, you still need to call *init()*.
 
-A table containing any of the following keys may be passed into the Rocky constructor to modify the default behavior:
-
-- *accessControl* &mdash; Modifies whether Rocky will automatically add `Access-Control` headers to the response object.
-- *allowUnsecure* &mdash; Modifies whether Rocky will accept HTTP requests. Rocky defaults to HTTPS.
-- *strictRouting* &mdash; Enables or disables strict routing. By default, Rocky will consider `/foo` and `/foo/` to be identical paths.
-- *timeout* &mdash; Modifies how long Rocky will hold onto a request before automatically executing the *onTimeout* handler.
-
-These are the default settings:
+All of Rocky’s methods are accessible as before, and return the same values. *init()* returns a reference to the Rocky singleton. There is no longer a distinction between class and instance methods: all of Rocky’s methods can be called on Rocky itself, or an alias variables, as these reference the same table:
 
 ```squirrel
-defaults <- {
-    accessControl = true,
-    allowUnsecure = false,
-    strictRouting = false,
-    timeout = 10
-}
+// These calls are equivalent
+app.get("/users/([^/]*)", function(context) {
+    local username = context.matches[1];
+});
+
+Rocky.get("/users/([^/]*)", function(context) {
+    local username = context.matches[1];
+});
 ```
+
+**Note** [Rocky.Context](#context) and [Rocky.Route](#route) continue to be implemented as classes, but remember that you will not be creating instances of these classes yourself &mdash; new instances will be made available to you as needed, by Rocky.
+
+#### Initialization Options ####
+
+A table containing any of the following keys may be passed into *init()* to modify the library’s default behavior:
+
+| Key | Description |
+| --- | --- |
+| *accessControl* | Modifies whether Rocky will automatically add `Access-Control` headers to the response object. Default: `true` |
+| *allowUnsecure* | Modifies whether Rocky will accept HTTP requests. Default: `false` (ie. HTTPS only) |
+| *strictRouting* | Enables or disables strict routing. Default: `false` (ie. Rocky will consider `/foo` and `/foo/` to be identical) |
+| *sigCaseSensitive* | Enforce [signature](#signatures) case sensitivity. Default: `false` (ie. Rocky will consider `/FOO` and `/foo` to be identical) |
+| *timeout* | Modifies how long Rocky will hold onto a request before automatically executing the *onTimeout* handler. Default: 10s |
 
 <div id="signatures"><h4>Signatures</h4></div>
 
@@ -102,7 +109,7 @@ app.get("/users/([^/]*)", function(context) {
 });
 ```
 
-## Rocky Instance Methods ##
+## Rocky Methods ##
 
 <div id="rocky_verb"><h3>VERB(<i>signature, callback[, timeout]</i>)</h3></div>
 
@@ -114,7 +121,7 @@ Rocky’s *VERB()* methods allow you to assign routes based on the specified ver
 
 When a match is found on the verb (as specified by the method) and the signature, the callback function will be executed. The callback receives a [Rocky.Context](#context) object as its only argument.
 
-An optional route-level timeout can be specified. If no timeout is specified, the timeout set in [the constructor](#rocky) will be used.
+An optional route-level timeout can be specified. If no timeout is specified, the timeout set in [the initializer](#rocky) will be used.
 
 #### Parameters ####
 
@@ -122,7 +129,7 @@ An optional route-level timeout can be specified. If no timeout is specified, th
 | --- | --- | --- | --- |
 | *signature* | String | Yes | A [signature](#signatures) defining the API endpoint |
 | *callback* | Function | Yes | A function to handle the request. It receives a [Rocky.Context](#context) object |
-| *timeout* | String | No | An optional request timeout in seconds. Default: the [constructor-set](#rocky) timeout |
+| *timeout* | String | No | An optional request timeout in seconds. Default: the [initializer-set](#rocky) timeout |
 
 #### Returns ####
 
@@ -149,7 +156,7 @@ This method allows you to create APIs that use verbs other than GET, PUT or POST
 | *verb* | String | Yes | The HTTP request verb |
 | *signature* | String | Yes | A [signature](#signatures) defining the API endpoint |
 | *callback* | Function | Yes | A function to handle the request. It receives a [Rocky.Context](#context) object |
-| *timeout* | String | No | An optional request timeout in seconds. Default: the [constructor-set](#rocky) timeout |
+| *timeout* | String | No | An optional request timeout in seconds. Default: the [initializer-set](#rocky) timeout |
 
 #### Returns ####
 
@@ -204,7 +211,7 @@ function customCORSMiddleware(context, next) {
     next();
 }
 
-app <- Rocky({ "accessControl": false });
+app <- Rocky.init({ "accessControl": false });
 
 // Add the middleware to the global Rocky object so every
 // incoming request has the headers added
@@ -340,11 +347,9 @@ app.onException(function(context, except) {
 });
 ```
 
-## Rocky Class Methods ##
+<div id="rocky_getcontext"><h3>getContext(<i>id</i>)</h3></div>
 
-<div id="rocky_getcontext"><h3>Rocky.getContext(<i>id</i>)</h3></div>
-
-Every [Rocky.Context](#context) object created by Rocky is assigned a unique ID that can retrieved by reading its [context.id](#context_id) field. Pass such an ID into *Rocky.getContext()* to retrieve previously created contexts. This method is primarily used for long-running or asynchronous requests. It is a method called on the class itself, not an instance.
+Every [Rocky.Context](#context) object created by Rocky is assigned a unique ID that can retrieved by reading its [context.id](#context_id) field. Pass such an ID into *getContext()* to retrieve previously created contexts. This method is primarily used for long-running or asynchronous requests.
 
 #### Parameters ####
 
@@ -369,7 +374,7 @@ app.get("/temp", function(context) {
 
 device.on("getTempResponse", function(data) {
     // When we get a getTempResponse message, get the context
-    local context = Rocky.getContext(data.id);
+    local context = app.getContext(data.id);
 
     // then send the response using that context
     if (!context.isComplete()) {
@@ -388,9 +393,9 @@ agent.on("getTemp", function(id) {
 });
 ```
 
-<div id="rocky_sendtoall"><h3>Rocky.sendToAll(<i>statuscode, response[, headers]</i>)</h3></div>
+<div id="rocky_sendtoall"><h3>sendToAll(<i>statuscode, response[, headers]</i>)</h3></div>
 
-This method sends a response to **all** open requests. This is most useful in APIs that allow for long-polling. It is a method called on the class itself, not an instance.
+This method sends a response to **all** open requests. This is most useful in APIs that allow for long-polling.
 
 #### Parameters ####
 
@@ -413,41 +418,8 @@ app.get("/poll", function(context) {
 
 // When we get data - send it to all open requests
 device.on("data", function(data) {
-    Rocky.sendToAll(200, data);
+    app.sendToAll(200, data);
 });
-```
-
-<div id="rocky_init"><h3>Rocky.init(<i>[options]</i>)</h3></div>
-
-This method returns a Rocky singleton. You may supply a table of options, as per the [constructor](#rocky), but these will only be applied on your first *Rocky.init()* call, and then only if you have not already called the constructor.
-
-- If you call the constructor first, all subsequent *Rocky.init()* calls will return the constructed instance.
-- If you call *Rocky.init()* first, all subsequent *Rocky.init()* calls will return the singleton instance.
-- If you call *Rocky.init()* first and later call the constructor, you will have two separate instances, but all subsequent *Rocky.init()* calls will return the singleton instance.
-
-#### Parameters ####
-
-| Parameter | Type | Required? | Description |
-| --- | --- | --- | --- |
-| *options* | Table | No | Instance options to modify the default behavior. See the [constructor](#rocky) for details |
-
-#### Returns ####
-
-A Rocky singleton.
-
-#### Example ####
-
-```squirrel
-local r1 = Rocky.init();
-server.log(r1);
-
-local r2 = Rocky.init();
-server.log(r2);
-
-local r3 = Rocky.init();
-server.log(r3);
-
-// Logs the same reference, to the singleton, in each case
 ```
 
 <div id="route"><h2>Rocky.Route Methods</h2></div>
@@ -485,7 +457,7 @@ Nothing.
 #### Example ####
 
 ```squirrel
-app <- Rocky();
+app <- Rocky.init();
 
 // Custom Middleware to validate new users
 function validateNewUserMiddleware(context, next) {
@@ -977,7 +949,7 @@ function debuggingMiddleware(context, next) {
     next();
 }
 
-app <- Rocky();
+app <- Rocky.init();
 app.use(debuggingMiddleware);
 
 app.get("/", function(context) {
@@ -1024,7 +996,7 @@ function validateDataMiddleware(context, next) {
     next();
 }
 
-app <- Rocky();
+app <- Rocky.init();
 
 // Requests to GET /data will execute readAuthMiddleware,
 // then the route handler if the readAuthMiddle didn't respond
@@ -1125,7 +1097,7 @@ function customCORSMiddleware(context, next) {
     next();
 }
 
-app <- Rocky( { "accessControl": false });
+app <- Rocky.init({ "accessControl": false });
 app.use([ customCORSMiddleware ]);
 ```
 

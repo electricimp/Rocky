@@ -32,7 +32,7 @@
 class CoreRockyMethod extends Core {
 
     @include __PATH__+"/CoreHandlers.nut"
-  
+
     withoutBody = false;
 
     function setUp() {
@@ -42,14 +42,14 @@ class CoreRockyMethod extends Core {
 
     function testSimple() {
         return createTest({
-            "signature": "/testSimple", 
+            "signature": "/testSimple",
             "method": getVerb()
         });
     }
 
     function testSimpleStrict() {
         return createTest({
-            "signature": "/testSimple", 
+            "signature": "/testSimple",
             "method": getVerb(),
             "methodStrictUsage": true
         });
@@ -57,10 +57,10 @@ class CoreRockyMethod extends Core {
 
     function testFull() {
         return createTest({
-            "signature": "/testFull", 
+            "signature": "/testFull",
             "method": getVerb(),
             "headers": {
-                "testFull": "testFull", 
+                "testFull": "testFull",
                 "GenericVerbCompatibilityTest": true
             },
             "body": "testFull body"
@@ -69,17 +69,17 @@ class CoreRockyMethod extends Core {
 
     function testSimpleWOSignature() {
         return createTest({
-            "signature": "/", 
+            "signature": "/",
             "method": getVerb()
         });
     }
 
     function testWOSignatureFull() {
         return createTest({
-            "signature": "/", 
+            "signature": "/",
             "method": getVerb(),
             "headers": {
-                "testWOSignatureFull": 35, 
+                "testWOSignatureFull": 35,
                 "GenericVerbCompatibilityTest": false
             },
             "body": "testWOSignatureFull body"
@@ -88,10 +88,10 @@ class CoreRockyMethod extends Core {
 
     function testTimeout() {
         return createTest({
-            "signature": "/testTimeout", 
+            "signature": "/testTimeout",
             "method": getVerb(),
             "headers": {
-                "testTimeout": 35, 
+                "testTimeout": 35,
                 "GenericVerbCompatibilityTest": "testTimeout"
             },
             "body": "testTimeout body",
@@ -101,7 +101,7 @@ class CoreRockyMethod extends Core {
 
     function testSimpleRegexp_1() {
         return createTest({
-            "signature": ".*", 
+            "signature": ".*",
             "signatureOverride": "/testSimpleRegexp_1",
             "method": getVerb()
         });
@@ -109,7 +109,7 @@ class CoreRockyMethod extends Core {
 
     function testSimpleRegexp_2() {
         return createTest({
-            "signature": "/test1(.*/test\\d.*)", 
+            "signature": "/test1(.*/test\\d.*)",
             "signatureOverride": "/test1/test2/test3",
             "method": getVerb(),
             "callback": function(context) {
@@ -130,21 +130,21 @@ class CoreRockyMethod extends Core {
 
     function testContentTypeJson() {
         return contentType({
-            "contentType": "contentType", 
+            "contentType": "contentType",
             "content-type": "application/json"
         }, "application/json", http.jsonencode({"contentType": "body"}));
     }
 
     function testContentTypeForm() {
         return contentType({
-            "contentType": "contentType", 
+            "contentType": "contentType",
             "content-type": "application/x-www-form-urlencoded"
         }, "application/x-www-form-urlencoded", "contentType=body");
     }
 
     function testContentTypeMultipart() {
         return Promise(function(resolve, reject) {
-            local app = Rocky();
+            local app = Rocky.init();
 
             local headers = {
                 "Content-Type": "multipart/form-data; boundary=----------287032381131322"
@@ -215,7 +215,7 @@ GIF89a.............,...........D..;
 
     function contentType(headers, contentType, body) {
         local params = {
-            "signature": "/contentType", 
+            "signature": "/contentType",
             "method": getVerb(),
             "headers": headers,
             "callback": function(context) {
@@ -272,8 +272,8 @@ GIF89a.............,...........D..;
 
     function testQuery() {
         return createTest({
-            "signature": "/testQuery", 
-            "signatureOverride": "/testQuery?first=1&second=2", 
+            "signature": "/testQuery",
+            "signatureOverride": "/testQuery?first=1&second=2",
             "method": getVerb(),
             "callback": function(context) {
                 try {

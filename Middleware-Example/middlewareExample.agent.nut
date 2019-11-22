@@ -21,7 +21,7 @@ function debugMiddleware(context, next) {
 
 // Middleware to add CORS headers
 function CORSMiddleware(context, next) {
-    server.log("Adding CORS headers to request")
+    server.log("Adding CORS headers to request");
 
     // Add some headers
     context.setHeader("Access-Control-Allow-Origin", "*");
@@ -33,7 +33,7 @@ function CORSMiddleware(context, next) {
 }
 
 // Setup Rocky and use the debugMiddleware on ALL requests
-app <- Rocky().use([ debugMiddleware ]);
+app <- Rocky.init().use([ debugMiddleware ]);
 
 // GET / - send hello world
 app.get("/", function(context) {

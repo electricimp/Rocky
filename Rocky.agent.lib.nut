@@ -12,58 +12,43 @@ enum ROCKY_ERROR {
  * @copyright Electric Imp, Inc. 2015-19
  * @license   MIT
  *
- * @class
+ * @table
  *
 */
-class Rocky {
+Rocky <- {
 
-    static VERSION = "3.0.0";
+    "VERSION": "3.0.0",
 
     // ------------------ PRIVATE PROPERTIES ------------------//
 
     // Route handlers, event handers and middleware
-    // are all stored in the same array
-    _handlers = null;
+    // are all stored in the same table
+    "_handlers": null,
 
     // Settings
-    _timeout = 10;
-    _strictRouting = false;
-    _allowUnsecure = false;
-    _accessControl = true;
+    "_timeout": 10,
+    "_strictRouting": false,
+    "_allowUnsecure": false,
+    "_accessControl": true,
+    "_sigCaseSensitive": false,
 
     /**
-     * The Rocky constructor.
+     * The Rocky initializer. In 3.0.0, this replaces the class constructor.
      *
      * @constructor
      *
      * @param {table} settings - Optional instance behavior settings. Default: see values above.
      *
-     * @returns {object} A Rocky instance.
+     * @returns {table} Rocky.
      *
     */
-    constructor(settings = {}) {
-        // ADDED 3.0.0
-        // If this is the first instance, record its reference as a global
-        if (!("rocky_singleton_control" in getroottable())) {
-            ::rocky_singleton_control <- this;
-        }
-
+    "init": function(settings = {}) {
         // Initialize settings, checking values as appropriate
-        if ("timeout" in settings) {
-            _timeout = _checkTimeout(settings.timeout);
-        }
-
-        if ("allowUnsecure" in settings) {
-            if (typeof settings.allowUnsecure == "bool") _allowUnsecure = settings.allowUnsecure;
-        }
-
-        if ("strictRouting" in settings) {
-            if (typeof settings.strictRouting == "bool") _strictRouting = settings.strictRouting;
-        }
-
-        if ("accessControl" in settings) {
-            if (typeof settings.accessControl == "bool") _accessControl = settings.accessControl;
-        }
+        if ("timeout" in settings && typeof settings.timeout == "bool") _timeout = settings.timeout;
+        if ("allowUnsecure" in settings && typeof settings.allowUnsecure == "bool") _allowUnsecure = settings.allowUnsecure;
+        if ("strictRouting" in settings && typeof settings.strictRouting == "bool") _strictRouting = settings.strictRouting;
+        if ("accessControl" in settings && typeof settings.accessControl == "bool") _accessControl = settings.accessControl;
+        if ("sigCaseSensitive" in settings && typeof settings.sigCaseSensitive == "bool") _sigCaseSensitive = settings.sigCaseSensitive;
 
         // Inititalize handlers and middleware
         _handlers = {
@@ -76,29 +61,12 @@ class Rocky {
         };
 
         // Bind the instance's onrequest handler
-        http.onrequest(_onrequest.bindenv(this));
-    }
+        http.onrequest(Rocky._onrequest.bindenv(this));
+
+        return this;
+    },
 
     //-------------------- STATIC METHODS --------------------//
-
-    /**
-     * Create or return the Rocky singleton.
-     *
-     * @param {table} settings - Optional instance behavior settings. Default: see constructor.
-     *
-     * @returns {object} The Rocky singleton instance.
-     *
-    */
-    static function init(options = null) {
-        // FROM 3.0.0
-        if ("rocky_singleton_control" in getroottable()) {
-            // Return a reference to the first Rocky singleton if present...
-            return ::rocky_singleton_control;
-        } else {
-            // ...or create a new instance (which will become the singleton)
-            return Rocky(options);
-        }
-    }
 
     /**
      * Get the specified Rocky context.
@@ -107,9 +75,9 @@ class Rocky {
      *
      * @returns {object} The requested Rocky.Context instance.
     */
-    static function getContext(id) {
+    "getContext": function(id) {
         return Rocky.Context.get(id);
-    }
+    },
 
     /**
      * Send a response to to all currently active requests.
@@ -119,9 +87,9 @@ class Rocky {
      * @param {table}   headers    - Optional additional response headers. Default: no additional headers.
      *
     */
-    static function sendToAll(statuscode, response, headers = {}) {
+    "sendToAll": function(statuscode, response, headers = {}) {
         Rocky.Context.sendToAll(statuscode, response, headers);
-    }
+    },
 
     //-------------------- PUBLIC METHODS --------------------//
 
@@ -137,23 +105,21 @@ class Rocky {
      *
      * @returns {object} A Rocky.Route instance for the handler.
     */
-    function on(verb, signature, callback, timeout = null) {
+    "on": function(verb, signature, callback, timeout = null) {
         // Check timeout and set it to class-level timeout if not specified for route
         if (timeout == null) timeout = this._timeout;
-        // ADDED 3.0.0 -- enforce timeout type (fix for https://github.com/electricimp/Rocky/issues/23)
-        timeout = _checkTimeout(timeout)
 
         // Register this verb and signature against the callback
         verb = verb.toupper();
-        // ADDED 3.0.0 -- remove lowercase signature limit (see https://github.com/electricimp/Rocky/issues/36)
-        // signature = signature.tolower();
+        // ADDED 3.0.0 -- Manage signature case (see https://github.com/electricimp/Rocky/issues/36)
+        if (!_sigCaseSensitive) signature = signature.tolower();
         if (!(signature in _handlers)) _handlers[signature] <- {};
 
         local routeHandler = Rocky.Route(callback);
         routeHandler.setTimeout(timeout);
         _handlers[signature][verb] <- routeHandler;
         return routeHandler;
-    }
+    },
 
     /**
      * Register a handler for an HTTP POST request.
@@ -164,9 +130,9 @@ class Rocky {
      *
      * @returns {object} A Rocky.Route instance for the handler.
     */
-    function post(signature, callback, timeout=null) {
+    "post": function(signature, callback, timeout=null) {
         return on("POST", signature, callback, timeout);
-    }
+    },
 
     /**
      * Register a handler for an HTTP GET request.
@@ -177,9 +143,9 @@ class Rocky {
      *
      * @returns {object} A Rocky.Route instance for the handler.
     */
-    function get(signature, callback, timeout=null) {
+    "get": function(signature, callback, timeout=null) {
         return on("GET", signature, callback, timeout);
-    }
+    },
 
     /**
      * Register a handler for an HTTP PUT request.
@@ -190,9 +156,9 @@ class Rocky {
      *
      * @returns {object} A Rocky.Route instance for the handler.
     */
-    function put(signature, callback, timeout=null) {
+    "put": function(signature, callback, timeout=null) {
         return on("PUT", signature, callback, timeout);
-    }
+    },
 
     // ------------------- AUTHORIZATION -------------------//
 
@@ -203,11 +169,10 @@ class Rocky {
      *
      * @returns {object} The Rocky instance (this).
     */
-    function authorize(callback) {
-        if (typeof callback != "function") throw ROCKY_ERROR.BAD_CALLBACK;
+    "authorize": function(callback) {
         _handlers.authorize <- callback;
         return this;
-    }
+    },
 
     /**
      * Register a handler for processing rejected requests.
@@ -216,11 +181,10 @@ class Rocky {
      *
      * @returns {object} The Rocky instance (this).
     */
-    function onUnauthorized(callback) {
-        if (typeof callback != "function") throw ROCKY_ERROR.BAD_CALLBACK;
+    "onUnauthorized": function(callback) {
         _handlers.onUnauthorized <- callback;
         return this;
-    }
+    },
 
     // -------------------      EVENTS    -------------------//
 
@@ -232,14 +196,11 @@ class Rocky {
      *
      * @returns {object} The Rocky instance (this).
     */
-    function onTimeout(callback, timeout = null) {
-        if (typeof callback != "function") throw ROCKY_ERROR.BAD_CALLBACK;
+    "onTimeout": function(callback, timeout = null) {
         if (timeout == null) timeout = _timeout;
-        // ADDED 3.0.0 -- enforce timeout type
-        _timeout = _checkTimeout(timeout);
         _handlers.onTimeout <- callback;
         return this;
-    }
+    },
 
     /**
      * Register a handler for requests asking for missing resources.
@@ -248,11 +209,10 @@ class Rocky {
      *
      * @returns {object} The Rocky instance (this).
     */
-    function onNotFound(callback) {
-        if (typeof callback != "function") throw ROCKY_ERROR.BAD_CALLBACK;
+    "onNotFound": function(callback) {
         _handlers.onNotFound <- callback;
         return this;
-    }
+    },
 
     /**
      * Register a handler for requests that triggered an exception.
@@ -261,11 +221,10 @@ class Rocky {
      *
      * @returns {object} The Rocky instance (this).
     */
-    function onException(callback) {
-        if (typeof callback != "function") throw ROCKY_ERROR.BAD_CALLBACK;
+    "onException": function(callback) {
         _handlers.onException <- callback;
         return this;
-    }
+    },
 
     // -------------------  MIDDLEWARES  -------------------//
 
@@ -276,7 +235,7 @@ class Rocky {
      *
      * @returns {object} The Rocky instance (this).
     */
-    function use(middlewares) {
+    "use": function(middlewares) {
         if (typeof middlewares == "function") {
             _handlers.middlewares.push(middlewares);
         } else if (typeof _handlers.middlewares == "array") {
@@ -286,7 +245,7 @@ class Rocky {
         }
 
         return this;
-    }
+    },
 
     //-------------------- PRIVATE METHODS --------------------//
 
@@ -297,11 +256,11 @@ class Rocky {
      *
      * @private
     */
-    function _addAccessControl(res) {
+    "_addAccessControl": function(res) {
         res.header("Access-Control-Allow-Origin", "*")
         res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
         res.header("Access-Control-Allow-Methods", "POST, PUT, GET, OPTIONS");
-    }
+    },
 
     /**
      * The core Rocky incoming HTTP request handler.
@@ -311,7 +270,7 @@ class Rocky {
      *
      * @private
     */
-    function _onrequest(req, res) {
+    "_onrequest": function(req, res) {
         // Add access control headers if required
         if (_accessControl) _addAccessControl(res);
 
@@ -329,7 +288,7 @@ class Rocky {
             req.rawbody <- req.body;
             req.body = _parse_body(req);
         } catch (err) {
-            context.send(400, ROCKY_PARSE_ERROR);
+            context.send(400, ROCKY_ERROR.PARSE);
             return;
         }
 
@@ -360,7 +319,7 @@ class Rocky {
                 _handlers.onException(context, ex);
             }
         }
-    }
+    },
 
     /**
      * Parse an HTTP request's body based on the request's content type.
@@ -371,7 +330,7 @@ class Rocky {
      *
      * @private
     */
-    function _parse_body(req) {
+    "_parse_body": function (req) {
         local contentType = "content-type" in req.headers ? req.headers["content-type"] : "";
 
         if (contentType == "application/json" || contentType.find("application/json;") != null) {
@@ -454,7 +413,7 @@ class Rocky {
 
         // Nothing matched, send back the original body
         return req.body;
-    }
+    },
 
     /**
      * Parse an HTTP request's authorization credentials.
@@ -465,7 +424,7 @@ class Rocky {
      *
      * @private
     */
-    function _parse_authorization(context) {
+    "_parse_authorization": function(context) {
         if ("authorization" in context.req.headers) {
             local auth = split(context.req.headers.authorization, " ");
 
@@ -485,7 +444,7 @@ class Rocky {
         }
 
         return { authType = "None", user = "", pass = "" };
-    }
+    },
 
     /**
      * Separate out the components of a request's target path.
@@ -498,7 +457,7 @@ class Rocky {
      *
      * @private
     */
-    function _extract_parts(routeHandler, path, regexp = null) {
+    "_extract_parts": function(routeHandler, path, regexp = null) {
         // Set up the table we will return
         local parts = { path = [], matches = [], handler = routeHandler };
 
@@ -515,7 +474,7 @@ class Rocky {
         }
 
         return parts;
-    }
+    },
 
     /**
      * Process regular expression matches against an endpoint path.
@@ -526,9 +485,10 @@ class Rocky {
      *
      * @private
     */
-    function _handler_match(req) {
-        // ADDED 3.0.0 -- remove lowercase signature limit (see https://github.com/electricimp/Rocky/issues/36)
-        local signature = req.path; //.tolower();
+    "_handler_match": function(req) {
+        // ADDED 3.0.0 -- manage signature case (see https://github.com/electricimp/Rocky/issues/36)
+        local signature = req.path;
+        if (!_sigCaseSensitive) signature = signature.tolower();
         local verb = req.method.toupper();
 
         // ignore trailing /s if _strictRouting == false
@@ -565,24 +525,7 @@ class Rocky {
             }
         }
         return null;
-    }
-
-    /**
-     * Check a passed timeout value is a positive integer or float.
-     * Incorrect types throw; negative values are converted to positive.
-     * NOTE Method is static to make it a class method, accessible by
-     *      Rocky.Route instances
-     *
-     * @param {any} t - A possible timeout value.
-     *
-     * @private
-    */
-    static function _checkTimeout(t) {
-        // Check for valid values
-        if (typeof t != "integer" && typeof t != "float") throw ROCKY_ERROR.TIMEOUT;
-        if (t < 0) t *= -1;
-        return t;
-    }
+    },
 
     //-------------------- DEFAULT HANDLERS --------------------//
 
@@ -595,9 +538,9 @@ class Rocky {
      *
      * @private
     */
-    function _defaultAuthorizeHandler(context) {
+    "_defaultAuthorizeHandler": function(context) {
         return true;
-    }
+    },
 
     /**
      * Process rejected requests: issue a 401 response.
@@ -606,9 +549,9 @@ class Rocky {
      *
      * @private
     */
-    function _defaultUnauthorizedHandler(context) {
+    "_defaultUnauthorizedHandler": function(context) {
         context.send(401, "Unauthorized");
-    }
+    },
 
     /**
      * Process requests to missing resources: issue a 404 response.
@@ -617,9 +560,9 @@ class Rocky {
      *
      * @private
     */
-    function _defaultNotFoundHandler(context) {
+    "_defaultNotFoundHandler": function(context) {
         context.send(404, format("No handler for %s %s", context.req.method, context.req.path));
-    }
+    },
 
     /**
      * Process timed out requests: issue a 500 response.
@@ -628,9 +571,9 @@ class Rocky {
      *
      * @private
     */
-    function _defaultTimeoutHandler(context) {
+    "_defaultTimeoutHandler": function(context) {
         context.send(500, format("Agent Request timed out after %i seconds.", _timeout));
-    }
+    },
 
     /**
      * Process requests that trigger exceptions: issue a 500 response.
@@ -640,7 +583,7 @@ class Rocky {
      *
      * @private
     */
-    function _defaultExceptionHandler(context, ex) {
+    "_defaultExceptionHandler": function(context, ex) {
         server.error(ex);
         context.send(500, "Agent Error: " + ex);
     }
@@ -759,8 +702,7 @@ class Rocky.Route {
     function onTimeout(callback, timeout = null) {
         if (typeof callback != "function") throw ROCKY_ERROR.BAD_CALLBACK;
         if (timeout == null) timeout = _timeout;
-        // ADDED 3.0.0 -- enforce timeout type
-        _timeout = Rocky._checkTimeout(timeout);
+        _timeout = timeout;
         return _setHandler("onTimeout", callback);
     }
 
