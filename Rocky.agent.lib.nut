@@ -130,7 +130,7 @@ Rocky <- {
      *
      * @returns {object} A Rocky.Route instance for the handler.
     */
-    "post": function(signature, callback, timeout=null) {
+    "post": function(signature, callback, timeout = null) {
         return on("POST", signature, callback, timeout);
     },
 
@@ -143,7 +143,7 @@ Rocky <- {
      *
      * @returns {object} A Rocky.Route instance for the handler.
     */
-    "get": function(signature, callback, timeout=null) {
+    "get": function(signature, callback, timeout = null) {
         return on("GET", signature, callback, timeout);
     },
 
@@ -156,7 +156,7 @@ Rocky <- {
      *
      * @returns {object} A Rocky.Route instance for the handler.
     */
-    "put": function(signature, callback, timeout=null) {
+    "put": function(signature, callback, timeout = null) {
         return on("PUT", signature, callback, timeout);
     },
 
@@ -197,7 +197,7 @@ Rocky <- {
      * @returns {object} The Rocky instance (this).
     */
     "onTimeout": function(callback, timeout = null) {
-        if (timeout == null) timeout = _timeout;
+        if (timeout != null) _timeout = timeout;
         _handlers.onTimeout <- callback;
         return this;
     },
@@ -701,8 +701,7 @@ class Rocky.Route {
     */
     function onTimeout(callback, timeout = null) {
         if (typeof callback != "function") throw ROCKY_ERROR.BAD_CALLBACK;
-        if (timeout == null) timeout = _timeout;
-        _timeout = timeout;
+        if (timeout != null) _timeout = timeout;
         return _setHandler("onTimeout", callback);
     }
 
@@ -1006,6 +1005,7 @@ class Rocky.Context {
      *
      * @param {integer}  timeout  - The timeout period in seconds.
      * @param {function} callback - The timeout handler.
+     * @param {function} exceptionHandler - An error handler.
      *
     */
     function setTimeout(timeout, callback, exceptionHandler = null) {
@@ -1021,7 +1021,7 @@ class Rocky.Context {
                     if (exceptionHandler != null) exceptionHandler(this, ex);
                 }
             }
-        }.bindenv(this))
+        }.bindenv(this));
     }
 
     /**
