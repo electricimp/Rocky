@@ -816,21 +816,23 @@ app.get("/index.html", function(context) {
 });
 ```
 
-<div id="context_settimeout"><h3>setTimeout(<i>timeout, callback, [exceptionHandler]</i>)</h3></div>
+<div id="context_settimeout"><h3>setTimeout(<i>timeout[, callback][, exceptionHandler]</i>)</h3></div>
 
-This method allows you to specify a timeout for the context. Calling this method immediately sets a timer which will fire when the timeout is exceeded
+This method allows you to specify a timeout for the context. Calling this method immediately sets a timer which will fire when the timeout is exceeded. This sets a time limit before which the context must be resolved by calling [*send()*](#context_send).
+
+If the timer fires and no function has been passed into *callback*, then the context will be sent with a status code of 504 (gateway timeout).
 
 #### Parameters ####
 
 | Parameter | Type | Required? | Description |
 | --- | --- | --- | --- |
 | *timeout* | Float or integer | Yes | The new timeout setting |
-| *callback* | Function | Yes | A handler to be called if the timeout is exceeded |
-| *timeout* | Float or integer | Yes | The new timeout setting |
+| *callback* | Function | No | A handler to be called if the timeout is exceeded |
+| *exceptionHandler* | Function | No | A handler to be called if the callback triggers a runtime error |
 
 #### Returns ####
 
-Float &mdash; The new timeout value.
+Nothing.
 
 ## Rocky.Context Class Methods ##
 
@@ -847,7 +849,6 @@ This method allows you to retrieve a specific context as referenced by its uniqu
 #### Returns ####
 
 [Rocky.Context](#context) &mdash; the requested context object, or `null` if the ID is unrecognized.
-
 
 <div id="context_sendtoall"><h3>Rocky.Context.sendToAll(<i>statuscode, response[, headers]</i>)</h3></div>
 
