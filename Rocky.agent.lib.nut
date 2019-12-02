@@ -627,6 +627,9 @@ class Rocky.Route {
 
     /**
      * Run the registered handlers (or defaults where no handlers are registered).
+     * NOTE This is public because it is used outside of the class (ie. by the Rocky singleton),
+     *      but it is not expected to be called directly by application code, so is not
+     *      formally documented.
      *
      * @param {object} context        - The Rocky.Context containing the request.
      * @param {Array} defaultHandlers - The currently registered handlers.
@@ -1008,12 +1011,12 @@ class Rocky.Context {
      * @param {function} exceptionHandler - An error handler.
      *
     */
-    function setTimeout(timeout, callback, exceptionHandler = null) {
+    function setTimeout(timeout, callback = null, exceptionHandler = null) {
         // Set the timeout timer
         if (timer) imp.cancelwakeup(timer);
         timer = imp.wakeup(timeout, function() {
             if (callback == null) {
-                send(502, "Timeout");
+                send(504, "Timeout");
             } else {
                 try {
                     callback(this);
