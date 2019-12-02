@@ -105,7 +105,7 @@ class RockyRouteHandlers extends Core {
     function testTimeoutException() {
         info("This test will take a couple of seconds");
         return createTest({
-            "signature": "/testTimeout",
+            "signature": "/testTimeoutException",
             "timeout": true,
             "onTimeoutRoute": throwException.bindenv(this),
             "onExceptionRoute": onException.bindenv(this),
