@@ -129,7 +129,7 @@ An optional route-level timeout can be specified. If no timeout is specified, th
 | --- | --- | --- | --- |
 | *signature* | String | Yes | A [signature](#signatures) defining the API endpoint |
 | *callback* | Function | Yes | A function to handle the request. It receives a [Rocky.Context](#context) object |
-| *timeout* | String | No | An optional request timeout in seconds. Default: the [initializer-set](#rocky) timeout |
+| *timeout* | String | No | An optional request timeout in seconds. Default: the global default or [*init()*](#rocky_init)-applied timeout |
 
 #### Returns ####
 
@@ -156,7 +156,7 @@ This method allows you to create APIs that use verbs other than GET, PUT or POST
 | *verb* | String | Yes | The HTTP request verb |
 | *signature* | String | Yes | A [signature](#signatures) defining the API endpoint |
 | *callback* | Function | Yes | A function to handle the request. It receives a [Rocky.Context](#context) object |
-| *timeout* | String | No | An optional request timeout in seconds. Default: the [initializer-set](#rocky) timeout |
+| *timeout* | String | No | An optional request timeout in seconds. Default: the global default or [*init()*](#rocky_init)-applied timeout |
 
 #### Returns ####
 
@@ -494,7 +494,7 @@ This method allows you to specify a route-level function to validate or authoriz
 The callback function receives a [Rocky.Context](#context) object as its single argument and must return either `true` (if the request is authorized) or `false` (if the request is not authorized). The callback is executed before the main request handler, so:
 
 - If the callback returns `true`, the route handler will be invoked.
-- If the callback returns `false`, the route-specific [onUnauthorized](#route_onunauthorized) response handler is invoked. If there is no route-specific [onUnauthorized](#route_onunauthorized) response handler, the global [onUnauthorized](#route_onunauthorized) response handler is invoked.
+- If the callback returns `false`, the route-specific [onUnauthorized](#route_onunauthorized) response handler is invoked. If there is no route-specific [onUnauthorized](#route_onunauthorized) response handler, the global [onUnauthorized](#rocky_onunauthorized) response handler is invoked.
 
 #### Returns ####
 
