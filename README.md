@@ -10,7 +10,7 @@ The Rocky library consists of the following components:
 
 - [Rocky](#rocky) &mdash; The core application, used to create routes, set default handlers, etc.
   - *Singleton Methods*
-    - [Rocky.init()](#rocky-usage) &mdash; Initializes the singleton and prepares it for use.
+    - [Rocky.init()](#rocky_init) &mdash; Initializes the singleton and prepares it for use.
     - [Rocky.get()](#rocky_verb) &mdash; Creates a handler for GET requests that match the specified signature.
     - [Rocky.put()](#rocky_verb) &mdash; Creates a handler for PUT requests that match the specified signature.
     - [Rocky.post()](#rocky_verb) &mdash; Creates a handler for POST requests that match the specified signature.
@@ -61,17 +61,6 @@ The Rocky library consists of the following components:
 
 Rocky 3.0.0 is implemented as a table to enforce singleton behavior. You code should no longer instantiate Rocky using a constructor call, but instead call the new *init()* method to initialize the library.
 
-*init()* takes the same argument as the former constructor: an optional [table of settings](#initialization-options).
-
-```squirrel
-#require "rocky.agent.lib.nut:3.0.0"
-
-local settings = { "timeout": 30 };
-app <- Rocky.init(settings);
-```
-
-If your code doesn’t alter Rocky’s default behavior, you still need to call *init()* in order to ensure that the table is correctly initialized.
-
 All of Rocky’s methods are accessible as before, and return the same values. *init()* returns a reference to the Rocky singleton. There is no longer a distinction between class and instance methods: all of Rocky’s methods can be called on Rocky itself, or an alias variables, as these reference the same table:
 
 ```squirrel
@@ -87,6 +76,20 @@ Rocky.get("/users/([^/]*)", function(context) {
 
 **Note** [Rocky.Context](#context) and [Rocky.Route](#route) continue to be implemented as classes, but remember that you will not be creating instances of these classes yourself &mdash; new instances will be made available to you as needed, by Rocky.
 
+## Rocky Methods ##
+
+<h3 id="rocky_init">init(<i>[settings]</i>)</h3>
+
+The new *init()* method takes the same argument as the former constructor: an optional [table of settings](#initialization-options).
+
+If your code doesn’t alter Rocky’s default behavior, you still need to call *init()* in order to ensure that the table is correctly initialized.
+
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *settings* | Table | No | See [**Initialization Options**](#initialization-options) for details and setting defaults |
+
 #### Initialization Options ####
 
 A table containing any of the following keys may be passed into *init()* to modify the library’s default behavior:
@@ -99,29 +102,14 @@ A table containing any of the following keys may be passed into *init()* to modi
 | *sigCaseSensitive* | Enforce [signature](#signatures) case sensitivity. Default: `false` (ie. Rocky will consider `/FOO` and `/foo` to be identical) |
 | *timeout* | Modifies how long Rocky will hold onto a request before automatically executing the *onTimeout* handler. Default: 10s |
 
-<div id="signatures"><h3>Signatures</h3></div>
-
-Signatures can either be fully qualified paths (`/led/state`) or include regular expressions (`/users/([^/]*)`). If the path is specified using a regular expression, any matches will be added to the [Rocky.Context](#context) object passed into the callback.
-
-In the following example, we capture the desired user’s username:
+#### Example ####
 
 ```squirrel
-app.get("/users/([^/]*)", function(context) {
-    // Grab the username from the regex
-    // (context.matches[0] will always be the full path)
-    local username = context.matches[1];
+#require "rocky.agent.lib.nut:3.0.0"
 
-    if (username in usersTable) {
-        // If we found the user, return the user object
-        context.send(usersTable[username]);
-    } else {
-        // If the user doesn't exist, return a 404
-        context.send(404, { "error": "Unknown User" });
-    }
-});
+local settings = { "timeout": 30 };
+app <- Rocky.init(settings);
 ```
-
-## Rocky Methods ##
 
 <div id="rocky_verb"><h3>VERB(<i>signature, callback[, timeout]</i>)</h3></div>
 
@@ -733,7 +721,7 @@ Boolean &mdash; `true` if the context’s response has already been sent, otherw
 
 <div id="context_getheader"><h3>getHeader(<i>name</i>)</h3></div>
 
-This method attempts to retrieve a header from the context’s [HTTP Request table](https://developer.electricimp.com/api/httphandler).
+This method attempts to retrieve a header from the context’s [HTTP Request table](https://developer.electricimp.com/api/httprequest).
 
 #### Parameters ####
 
@@ -1023,6 +1011,28 @@ device.on("getTempResponse", function(data) {
 <div id="context_sent"><h3>context.sent</h3></div>
 
 The *sent* property is **deprecated**. Developers should instead call [*isComplete()*](#context_iscomplete).
+
+<div id="signatures"><h2>Signatures</h2></div>
+
+Signatures can either be fully qualified paths (`/led/state`) or include regular expressions (`/users/([^/]*)`). If the path is specified using a regular expression, any matches will be added to the [Rocky.Context](#context) object passed into the callback.
+
+In the following example, we capture the desired user’s username:
+
+```squirrel
+app.get("/users/([^/]*)", function(context) {
+    // Grab the username from the regex
+    // (context.matches[0] will always be the full path)
+    local username = context.matches[1];
+
+    if (username in usersTable) {
+        // If we found the user, return the user object
+        context.send(usersTable[username]);
+    } else {
+        // If the user doesn't exist, return a 404
+        context.send(404, { "error": "Unknown User" });
+    }
+});
+```
 
 <div id="middleware"><h2>Middleware</h2></div>
 
