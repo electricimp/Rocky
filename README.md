@@ -583,7 +583,7 @@ device.on("getTempResponse", function(data) {
 
 <div id="route_onexception"><h3>onException(<i>callback</i>)</h3></div>
 
-This method allows you to configure a route-level response handler for requests that encounter runtime errors. A route-level onException handler will override the global onException handler set by Rocky’s[*onTimeout()*](#rocky_ontimeout) method for requests made to the specified route.
+This method allows you to configure a route-level response handler for requests that encounter runtime errors. A route-level onException handler will override the global onException handler set by Rocky’s [*onTimeout()*](#rocky_ontimeout) method for requests made to the specified route.
 
 #### Parameters ####
 
@@ -748,7 +748,7 @@ app.get("/", function(context) {
 
 <div id="context_setheader"><h3>setHeader(<i>name, value</i>)</h3></div>
 
-This method adds the specified header to the [HTTPResponse](https://developer.electricimp.com/api/httpresponse) object sent during [context.send](#context_send).
+This method adds the specified header to the [HTTPResponse](https://developer.electricimp.com/api/httpresponse) object sent by calling [*send()*](#context_send).
 
 #### Parameters ####
 
@@ -847,7 +847,7 @@ This method allows you to retrieve a specific context as referenced by its uniqu
 
 <div id="context_sendtoall"><h3>Rocky.Context.sendToAll(<i>statuscode, response[, headers]</i>)</h3></div>
 
-This method sends a response to **all** open requests. The preferred way of invoking this method is by calling [*Rocky.sendToAll()*](#rocky_sendtoall).
+This method sends a response to **all** open requests. The preferred way of invoking this method is by calling Rocky’s [*sendToAll()*](#rocky_sendtoall) method.
 
 #### Parameters ####
 
@@ -1158,8 +1158,8 @@ app.get("/user", function(context) {
 
 When Rocky processes an incoming HTTPS request, the following sequence of events takes place:
 
-- Rocky adds the access control headers unless the `accessControl` setting (see [*rocky.init()*](#rocky)) is set to `false`.
-- Rocky rejects non-HTTPS requests unless the `allowUnsecure` setting (see [*rocky.init()*](#rocky)) is set to `true`.
+- Rocky adds the access control headers unless the `accessControl` setting (see [*rocky.init()*](#rocky_init)) is set to `false`.
+- Rocky rejects non-HTTPS requests unless the `allowUnsecure` setting (see [*rocky.init()*](#rocky_init)) is set to `true`.
 - Rocky parses the request body.
     - Rocky sends a 400 response if there was an error parsing the data.
 - Global-level middleware functions are invoked.
