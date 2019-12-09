@@ -82,7 +82,7 @@ Rocky.get("/users/([^/]*)", function(context) {
 
 The new *init()* method takes the same argument as the former constructor: an optional [table of settings](#initialization-options).
 
-If your code doesn’t alter Rocky’s default behavior, you still need to call *init()* in order to ensure that the table is correctly initialized.
+Even if your code doesn’t alter Rocky’s default behavior, you still need to call *init()* in order to ensure that the table is correctly initialized for use.
 
 #### Parameters ####
 

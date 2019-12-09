@@ -43,6 +43,9 @@ Rocky <- {
      *
     */
     "init": function(settings = {}) {
+        // Set defaults on a re-call
+        _setDefaults();
+
         // Initialize settings, checking values as appropriate
         if ("timeout" in settings && typeof settings.timeout == "bool") _timeout = settings.timeout;
         if ("allowUnsecure" in settings && typeof settings.allowUnsecure == "bool") _allowUnsecure = settings.allowUnsecure;
@@ -586,6 +589,19 @@ Rocky <- {
     "_defaultExceptionHandler": function(context, ex) {
         server.error(ex);
         context.send(500, "Agent Error: " + ex);
+    },
+
+    /**
+     * Set Rocky defaults.
+     *
+     * @private
+    */
+    "_setDefaults": function() {
+        _timeout = 10;
+        _strictRouting = false;
+        _allowUnsecure = false;
+        _accessControl = true;
+        _sigCaseSensitive = false;
     }
 }
 
