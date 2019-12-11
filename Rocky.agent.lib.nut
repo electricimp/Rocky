@@ -43,6 +43,9 @@ Rocky <- {
      *
     */
     "init": function(settings = {}) {
+        // Set defaults on a re-call
+        _setDefaults();
+
         // Initialize settings, checking values as appropriate
         if ("timeout" in settings && typeof settings.timeout == "bool") _timeout = settings.timeout;
         if ("allowUnsecure" in settings && typeof settings.allowUnsecure == "bool") _allowUnsecure = settings.allowUnsecure;
@@ -130,7 +133,7 @@ Rocky <- {
      *
      * @returns {object} A Rocky.Route instance for the handler.
     */
-    "post": function(signature, callback, timeout=null) {
+    "post": function(signature, callback, timeout = null) {
         return on("POST", signature, callback, timeout);
     },
 
@@ -143,7 +146,7 @@ Rocky <- {
      *
      * @returns {object} A Rocky.Route instance for the handler.
     */
-    "get": function(signature, callback, timeout=null) {
+    "get": function(signature, callback, timeout = null) {
         return on("GET", signature, callback, timeout);
     },
 
@@ -156,7 +159,7 @@ Rocky <- {
      *
      * @returns {object} A Rocky.Route instance for the handler.
     */
-    "put": function(signature, callback, timeout=null) {
+    "put": function(signature, callback, timeout = null) {
         return on("PUT", signature, callback, timeout);
     },
 
@@ -197,7 +200,7 @@ Rocky <- {
      * @returns {object} The Rocky instance (this).
     */
     "onTimeout": function(callback, timeout = null) {
-        if (timeout == null) timeout = _timeout;
+        if (timeout != null) _timeout = timeout;
         _handlers.onTimeout <- callback;
         return this;
     },
@@ -586,6 +589,19 @@ Rocky <- {
     "_defaultExceptionHandler": function(context, ex) {
         server.error(ex);
         context.send(500, "Agent Error: " + ex);
+    },
+
+    /**
+     * Set Rocky defaults.
+     *
+     * @private
+    */
+    "_setDefaults": function() {
+        _timeout = 10;
+        _strictRouting = false;
+        _allowUnsecure = false;
+        _accessControl = true;
+        _sigCaseSensitive = false;
     }
 }
 
@@ -627,6 +643,9 @@ class Rocky.Route {
 
     /**
      * Run the registered handlers (or defaults where no handlers are registered).
+     * NOTE This is public because it is used outside of the class (ie. by the Rocky singleton),
+     *      but it is not expected to be called directly by application code, so is not
+     *      formally documented.
      *
      * @param {object} context        - The Rocky.Context containing the request.
      * @param {Array} defaultHandlers - The currently registered handlers.
@@ -701,8 +720,7 @@ class Rocky.Route {
     */
     function onTimeout(callback, timeout = null) {
         if (typeof callback != "function") throw ROCKY_ERROR.BAD_CALLBACK;
-        if (timeout == null) timeout = _timeout;
-        _timeout = timeout;
+        if (timeout != null) _timeout = timeout;
         return _setHandler("onTimeout", callback);
     }
 
@@ -1006,14 +1024,15 @@ class Rocky.Context {
      *
      * @param {integer}  timeout  - The timeout period in seconds.
      * @param {function} callback - The timeout handler.
+     * @param {function} exceptionHandler - An error handler.
      *
     */
-    function setTimeout(timeout, callback, exceptionHandler = null) {
+    function setTimeout(timeout, callback = null, exceptionHandler = null) {
         // Set the timeout timer
         if (timer) imp.cancelwakeup(timer);
         timer = imp.wakeup(timeout, function() {
             if (callback == null) {
-                send(502, "Timeout");
+                send(504, "Timeout");
             } else {
                 try {
                     callback(this);
@@ -1021,7 +1040,7 @@ class Rocky.Context {
                     if (exceptionHandler != null) exceptionHandler(this, ex);
                 }
             }
-        }.bindenv(this))
+        }.bindenv(this));
     }
 
     /**
