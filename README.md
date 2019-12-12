@@ -121,7 +121,7 @@ Rocky’s *VERB()* methods allow you to assign routes based on the specified ver
 
 When a match is found on the verb (as specified by the method) and the signature, the callback function will be executed. The callback receives a [Rocky.Context](#context) object as its only argument.
 
-An optional route-level timeout can be specified. If no timeout is specified, the timeout set in [the initializer](#rocky) will be used.
+An optional route-level timeout can be specified. If no timeout is specified, the timeout set in [the initializer](#rocky_init) will be used.
 
 #### Parameters ####
 
