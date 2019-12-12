@@ -33,7 +33,7 @@ class RockyConstructor extends Core {
     @include __PATH__+"/CoreHandlers.nut"
 
     values = null;
-    
+
     function setUp() {
         values = [null, true, 0, -1, 1, 13.37, "String", [1, 2], {"counter": "this"}, blob(64), function(){}];
     }
@@ -42,7 +42,7 @@ class RockyConstructor extends Core {
         local tests = [];
         foreach (element in values) {
             tests.push({
-                "signature": "/testAccessControlOption", 
+                "signature": "/testAccessControlOption",
                 "params": {"accessControl": element}
             });
         }
@@ -53,7 +53,7 @@ class RockyConstructor extends Core {
         local tests = [];
         foreach (element in values) {
             tests.push({
-                "signature": "/testAllowUnsecureOption", 
+                "signature": "/testAllowUnsecureOption",
                 "params": {"allowUnsecure": element}
             });
         }
@@ -64,25 +64,41 @@ class RockyConstructor extends Core {
         local tests = [];
         foreach (element in values) {
             tests.push({
-                "signature": "/testStrictRoutingOption", 
+                "signature": "/testStrictRoutingOption",
                 "params": {"strictRouting": element}
             });
         }
         return createTestAll(tests);
     }
 
-    // issue: https://github.com/electricimp/Rocky/issues/24
-    //function testRockyTimeoutOption() {
-    //    local tests = [];
-    //    foreach (element in values) {
-    //        tests.push({
-    //            "signature": "/testTimeoutOption", 
-    //            "params": {"timeout": element},
-    //            "onException": onException.bindenv(this)
-    //        });
-    //    }
-    //    return createTestAll(tests);
-    //}
+    // issue: https://github.com/electricimp/Rocky/issues/24 (and 23)
+    function testRockyTimeoutOptionBad() {
+        // These should FAIL
+        local tests = [];
+        foreach (idx, element in values) {
+            if (idx < 2 && idx > 5) {
+                tests.push({
+                    "signature": "/testTimeoutOption",
+                    "params": {"timeout": element},
+                });
+            }
+        }
+        return createTestAll(tests, "negative");
+    }
+
+    function testRockyTimeoutOptionGood() {
+        // These should PASS
+        local tests = [];
+        foreach (idx, element in values) {
+            if (idx > 1 && idx < 6) {
+                tests.push({
+                    "signature": "/testTimeoutOption",
+                    "params": {"timeout": element},
+                });
+            }
+        }
+        return createTestAll(tests);
+    }
 
     function testRockyWrongOption() {
         local values = ["hello", "strictrouting", "AllowUnsecure", "TimeOut"];
@@ -92,8 +108,9 @@ class RockyConstructor extends Core {
             params[element] <- c++;
         }
         return createTest({
-            "signature": "/testWrongOption", 
+            "signature": "/testWrongOption",
             "params": params
         });
     }
+
 }

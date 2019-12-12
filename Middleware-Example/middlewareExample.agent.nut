@@ -1,4 +1,8 @@
-#require "rocky.class.nut:2.0.0"
+// Copyright (c) 2015-19 Electric Imp
+// This file is licensed under the MIT License
+// http://opensource.org/licenses/MIT
+
+#require "Rocky.agent.lib.nut:3.0.0"
 
 // Dummy Data for API
 data <- { "foo": "bar" };
@@ -17,7 +21,7 @@ function debugMiddleware(context, next) {
 
 // Middleware to add CORS headers
 function CORSMiddleware(context, next) {
-    server.log("Adding CORS headers to request")
+    server.log("Adding CORS headers to request");
 
     // Add some headers
     context.setHeader("Access-Control-Allow-Origin", "*");
@@ -29,7 +33,7 @@ function CORSMiddleware(context, next) {
 }
 
 // Setup Rocky and use the debugMiddleware on ALL requests
-app <- Rocky().use([ debugMiddleware ]);
+app <- Rocky.init().use([ debugMiddleware ]);
 
 // GET / - send hello world
 app.get("/", function(context) {

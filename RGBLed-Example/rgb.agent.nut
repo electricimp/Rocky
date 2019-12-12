@@ -1,8 +1,8 @@
-// Copyright (c) 2015 Electric Imp
+// Copyright (c) 2015-19 Electric Imp
 // This file is licensed under the MIT License
 // http://opensource.org/licenses/MIT
 
-#require "Rocky.class.nut:2.0.0"
+#require "Rocky.agent.lib.nut:3.0.0"
 
 /******************** Application Code ********************/
 led <- {
@@ -14,7 +14,7 @@ device.on("info", function(data) {
     led = data;
 });
 
-app <- Rocky();
+app <- Rocky.init();
 
 app.get("/color", function(context) {
     context.send(200, { color = led.color });
@@ -32,7 +32,8 @@ app.post("/color", function(context) {
 
         // if preflight check passed - do things
         led.color = context.req.body.color;
-        device.send("setColor", context.req.body.color);
+        server.log("Setting color to R: " + led.color.red + ", G: " + led.color.green + ", B: " + led.color.blue);
+        device.send("setColor", led.color);
 
         // send the response
         context.send({ "verb": "POST", "led": led });
@@ -53,7 +54,8 @@ app.post("/state", function(context) {
 
     // if preflight check passed - do things
     led.state = context.req.body.state;
-    device.send("setState", context.req.body.state);
+    server.log("Setting state to " + (led.state ? "on" : "off"));
+    device.send("setState", led.state);
 
     // send the response
     context.send({ "verb": "POST", "led": led });
