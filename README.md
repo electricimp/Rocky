@@ -1,4 +1,4 @@
-# Rocky 3.0.0 #
+# Rocky 3.0.1 #
 
 Rocky is an framework for building powerful and scalable APIs for your imp-powered products.
 
@@ -59,7 +59,7 @@ The Rocky library consists of the following components:
 
 ## Rocky Usage ##
 
-Rocky 3.0.0 is implemented as a table to enforce singleton behavior. You code should no longer instantiate Rocky using a constructor call, but instead call the new *init()* method to initialize the library.
+Rocky 3.0.0 and up is implemented as a table to enforce singleton behavior. You code should no longer instantiate Rocky using a constructor call, but instead call the new *init()* method to initialize the library.
 
 All of Rocky’s methods are accessible as before, and return the same values. *init()* returns a reference to the Rocky singleton. There is no longer a distinction between class and instance methods: all of Rocky’s methods can be called on Rocky itself, or an alias variables, as these reference the same table:
 
@@ -105,7 +105,7 @@ A table containing any of the following keys may be passed into *init()* to modi
 #### Example ####
 
 ```squirrel
-#require "rocky.agent.lib.nut:3.0.0"
+#require "rocky.agent.lib.nut:3.0.1"
 
 local settings = { "timeout": 30 };
 app <- Rocky.init(settings);
