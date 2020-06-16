@@ -9,7 +9,7 @@ enum ROCKY_ERROR {
 /**
  * This class allows you to define and operate an agent-served API.
  *
- * @copyright Electric Imp, Inc. 2015-19
+ * @copyright Electric Imp, Inc. 2015-20
  * @license   MIT
  *
  * @table
