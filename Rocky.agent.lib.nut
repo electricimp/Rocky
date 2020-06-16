@@ -17,7 +17,7 @@ enum ROCKY_ERROR {
 */
 Rocky <- {
 
-    "VERSION": "3.0.0",
+    "VERSION": "3.0.1",
 
     // ------------------ PRIVATE PROPERTIES ------------------//
 
