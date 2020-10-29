@@ -47,7 +47,7 @@ Rocky <- {
         _setDefaults();
 
         // Initialize settings, checking values as appropriate
-        if ("timeout" in settings && typeof settings.timeout == "bool") _timeout = settings.timeout;
+        if ("timeout" in settings && ((typeof settings.timeout == "integer") || (typeof settings.timeout == "float"))) _timeout = settings.timeout;
         if ("allowUnsecure" in settings && typeof settings.allowUnsecure == "bool") _allowUnsecure = settings.allowUnsecure;
         if ("strictRouting" in settings && typeof settings.strictRouting == "bool") _strictRouting = settings.strictRouting;
         if ("accessControl" in settings && typeof settings.accessControl == "bool") _accessControl = settings.accessControl;
