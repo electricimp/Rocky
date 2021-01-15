@@ -9,7 +9,8 @@ enum ROCKY_ERROR {
 /**
  * This class allows you to define and operate an agent-served API.
  *
- * @copyright Electric Imp, Inc. 2015-20
+ * @copyright 2015-19 Electric Imp
+ * @copyright 2020-21 Twilio
  * @license   MIT
  *
  * @table
