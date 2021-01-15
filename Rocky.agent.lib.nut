@@ -9,7 +9,8 @@ enum ROCKY_ERROR {
 /**
  * This class allows you to define and operate an agent-served API.
  *
- * @copyright Electric Imp, Inc. 2015-19
+ * @copyright 2015-19 Electric Imp
+ * @copyright 2020-21 Twilio
  * @license   MIT
  *
  * @table
@@ -17,7 +18,7 @@ enum ROCKY_ERROR {
 */
 Rocky <- {
 
-    "VERSION": "3.0.0",
+    "VERSION": "3.0.1",
 
     // ------------------ PRIVATE PROPERTIES ------------------//
 
@@ -47,7 +48,7 @@ Rocky <- {
         _setDefaults();
 
         // Initialize settings, checking values as appropriate
-        if ("timeout" in settings && typeof settings.timeout == "bool") _timeout = settings.timeout;
+        if ("timeout" in settings && (typeof settings.timeout == "integer" || typeof settings.timeout == "float")) _timeout = settings.timeout;
         if ("allowUnsecure" in settings && typeof settings.allowUnsecure == "bool") _allowUnsecure = settings.allowUnsecure;
         if ("strictRouting" in settings && typeof settings.strictRouting == "bool") _strictRouting = settings.strictRouting;
         if ("accessControl" in settings && typeof settings.accessControl == "bool") _accessControl = settings.accessControl;
