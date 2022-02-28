@@ -1,4 +1,4 @@
-# Rocky 3.0.1 #
+# Rocky 3.0.2 #
 
 Rocky is an framework for building powerful and scalable APIs for your imp-powered products.
 

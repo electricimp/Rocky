@@ -1,16 +1,46 @@
+/*
+ * Rocky Library
+ * Copyright 2022 Twilio
+ *
+ * MIT License
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+ * EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
+ * OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+
+/*
+ * Enums
+ */
 enum ROCKY_ERROR {
-    PARSE = "Error parsing body of request",
-    BAD_MIDDLEWARE = "Invalid middleware -- middleware must be a function",
-    TIMEOUT = "Bad timeout value - must be an integer or float",
-    NO_BOUNDARY = "No boundary found in content-type",
-    BAD_CALLBACK = "Invald callback -- callback must be a function"
+    PARSE           = "Error parsing body of request",
+    BAD_MIDDLEWARE  = "Invalid middleware -- middleware must be a function",
+    TIMEOUT         = "Bad timeout value - must be an integer or float",
+    NO_BOUNDARY     = "No boundary found in content-type",
+    BAD_CALLBACK    = "Invald callback -- callback must be a function"
 }
 
 /**
- * This class allows you to define and operate an agent-served API.
+ * This library allows you to define and operate an agent-served API.
  *
- * @copyright 2015-19 Electric Imp
- * @copyright 2020-21 Twilio
+ * @copyright 2022 Twilio
  * @license   MIT
  *
  * @table
@@ -18,7 +48,7 @@ enum ROCKY_ERROR {
 */
 Rocky <- {
 
-    "VERSION": "3.0.1",
+    "VERSION": "3.0.2",
 
     // ------------------ PRIVATE PROPERTIES ------------------//
 
@@ -56,17 +86,18 @@ Rocky <- {
 
         // Inititalize handlers and middleware
         _handlers = {
-            authorize = _defaultAuthorizeHandler.bindenv(this),
-            onUnauthorized = _defaultUnauthorizedHandler.bindenv(this),
-            onTimeout = _defaultTimeoutHandler.bindenv(this),
-            onNotFound = _defaultNotFoundHandler.bindenv(this),
-            onException = _defaultExceptionHandler.bindenv(this),
-            middlewares = []
+            authorize       = _defaultAuthorizeHandler.bindenv(this),
+            onUnauthorized  = _defaultUnauthorizedHandler.bindenv(this),
+            onTimeout       = _defaultTimeoutHandler.bindenv(this),
+            onNotFound      = _defaultNotFoundHandler.bindenv(this),
+            onException     = _defaultExceptionHandler.bindenv(this),
+            middlewares     = []
         };
 
         // Bind the instance's onrequest handler
         http.onrequest(Rocky._onrequest.bindenv(this));
 
+        // Return the table itself
         return this;
     },
 
@@ -261,7 +292,7 @@ Rocky <- {
      * @private
     */
     "_addAccessControl": function(res) {
-        res.header("Access-Control-Allow-Origin", "*")
+        res.header("Access-Control-Allow-Origin",  "*");
         res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
         res.header("Access-Control-Allow-Methods", "POST, PUT, GET, OPTIONS");
     },
@@ -299,11 +330,11 @@ Rocky <- {
         // Look for a handler for this path
         local route = _handler_match(req);
         if (route) {
-            // if we have a handler
+            // If we have a handler
             context.path = route.path;
             context.matches = route.matches;
 
-            // parse auth
+            // Parse auth
             context.auth = _parse_authorization(context);
 
             // Create timeout
@@ -515,7 +546,8 @@ Rocky <- {
                     foreach (_verb,_callback in _handler) {
                         if (_verb == verb || _verb == "*") {
                             try {
-                                local ex = regexp(_signature);
+                                // FROM 3.0.2 -- Use regexp2
+                                local ex = regexp2(_signature);
                                 if (ex.match(signature)) {
                                     // We have a regexp handler match
                                     return _extract_parts(_callback, signature, ex);
@@ -611,7 +643,7 @@ Rocky <- {
  * This class defines a handler for an event, eg. request authorization, time out or
  * a triggered exception, or some other, user-defined action (ie. a 'middleware').
  *
- * @copyright Electric Imp, Inc. 2015-19
+ * @copyright Twilio 2022
  * @license   MIT
  *
  * @class
@@ -653,7 +685,7 @@ class Rocky.Route {
      *
     */
     function execute(context, defaultHandlers) {
-        // NOTE: Copying these handlers into the route might have some unintended side effect.
+        // NOTE: Copying these handlers into the route might have some unintended side effects.
         //       Consider changing this if issues come up.
         foreach (handlerName, handler in defaultHandlers) {
             // Copy over the non-middleware handlers
@@ -872,7 +904,7 @@ class Rocky.Route {
  * and response objects with extracted data (eg. path, authorization), user-defined data,
  * and housekeeping information (eg. whether the context has responded).
  *
- * @copyright Electric Imp, Inc. 2015-19
+ * @copyright 2022 Twilio
  * @license   MIT
  *
  * @class
