@@ -1,6 +1,6 @@
 /*
  * Rocky Library
- * Copyright 2022 Twilio
+ * Copyright 2023 KORE Wireless
  *
  * MIT License
  *
@@ -40,7 +40,7 @@ enum ROCKY_ERROR {
 /**
  * This library allows you to define and operate an agent-served API.
  *
- * @copyright 2022 Twilio
+ * @copyright 2023 KORE Wireless
  * @license   MIT
  *
  * @table
@@ -643,7 +643,7 @@ Rocky <- {
  * This class defines a handler for an event, eg. request authorization, time out or
  * a triggered exception, or some other, user-defined action (ie. a 'middleware').
  *
- * @copyright Twilio 2022
+ * @copyright 2023 KORE Wireless
  * @license   MIT
  *
  * @class
@@ -904,7 +904,7 @@ class Rocky.Route {
  * and response objects with extracted data (eg. path, authorization), user-defined data,
  * and housekeeping information (eg. whether the context has responded).
  *
- * @copyright 2022 Twilio
+ * @copyright 2022 KORE Wireless
  * @license   MIT
  *
  * @class

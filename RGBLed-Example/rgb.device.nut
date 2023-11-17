@@ -1,4 +1,5 @@
 // Copyright (c) 2015-19 Electric Imp
+// Copyright (c) 2023 KORE Wireless
 // This file is licensed under the MIT License
 // http://opensource.org/licenses/MIT
 
