@@ -1,6 +1,6 @@
 /*
  * Rocky Library
- * Copyright 2023 KORE Wireless
+ * Copyright 2020-23 KORE Wireless
  *
  * MIT License
  *
