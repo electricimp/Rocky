@@ -4,8 +4,6 @@ Rocky is an framework for building powerful and scalable APIs for your imp-power
 
 **Important** From version 3.0.0, Rocky is implemented as a table rather than a class. **This is a breaking change**. This change has been made to ensure that Rocky is available solely as a singleton. For full details on updating your code, please see [**Rocky Usage**](#rocky-usage), below.
 
-![Build Status](https://cse-ci.electricimp.com/app/rest/builds/buildType:(id:Rocky_BuildAndTest)/statusIcon)
-
 The Rocky library consists of the following components:
 
 - [Rocky](#rocky) &mdash; The core application, used to create routes, set default handlers, etc.
